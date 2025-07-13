@@ -1,0 +1,11 @@
+[package]
+name = 'IntegerMate'
+version = '1.0.0'
+
+[addresses]
+integer_mate = "0xa7f01413d33ba919441888637ca1607ca0ddcbfa3c0a9ddea64743aaa560e498"
+
+[dependencies.MoveStdlib]
+git = "https://github.com/aptos-labs/aptos-framework.git"
+rev = "mainnet"
+subdir = "move-stdlib"
