@@ -8,34 +8,39 @@ module eden_clmm::clmm_math {
     use integer_mate::i64::{Self, I64};
     use eden_clmm::tick_math;
     use integer_mate::math_u128;
-    use integer_mate::u256::{U256};
     use integer_mate::math_u256::{Self};
 
-   // 错误代码
-    const ETOKEN_AMOUNT_MAX_EXCEEDED: u64 = 1; // 代币数量超过最大值
-    const ETOKEN_AMOUNT_MIN_SUBCEEDED: u64 = 2; // 代币数量低于最小值
-    const EMULTIPLICATION_OVERFLOW: u64 = 3; // 乘法溢出
-    const EINTEGER_DOWNCAST_OVERFLOW: u64 = 4; // 整数向下转换溢出
-    const EINVALID_SQRT_PRICE_INPUT: u64 = 5; // 无效的sqrt价格输入
-    const EINVALID_FIXED_TOKEN_TYPE: u64 = 6; // 无效的固定代币类型
+    // 错误代码
+    const ETOKEN_AMOUNT_MAX_EXCEEDED: u64 = 1;
+    // 代币数量超过最大值
+    const ETOKEN_AMOUNT_MIN_SUBCEEDED: u64 = 2;
+    // 代币数量低于最小值
+    const EMULTIPLICATION_OVERFLOW: u64 = 3;
+    // 乘法溢出
+    const EINTEGER_DOWNCAST_OVERFLOW: u64 = 4;
+    // 整数向下转换溢出
+    const EINVALID_SQRT_PRICE_INPUT: u64 = 5;
+    // 无效的sqrt价格输入
+    const EINVALID_FIXED_TOKEN_TYPE: u64 = 6;
+    // 无效的固定代币类型
     const EFUN_DEPRECATED: u64 = 7; // 函数已弃用
 
-   // 费率分母常量
+    // 费率分母常量
     const FEE_RATE_DENOMINATOR: u64 = 1000000;
 
-   // 获取费率分母
-   // 返回值：费率分母
+    // 获取费率分母
+    // 返回值：费率分母
     public fun fee_rate_denominator(): u64 {
         FEE_RATE_DENOMINATOR
     }
 
-   // 根据代币A数量计算流动性
-   // 参数：
-   //     - sqrt_price_0: 起始sqrt价格
-   //     - sqrt_price_1: 结束sqrt价格
-   //     - amount_a: 代币A数量
-   //     - round_up: 是否向上取整
-   // 返回值：流动性值
+    // 根据代币A数量计算流动性
+    // 参数：
+    //     - sqrt_price_0: 起始sqrt价格
+    //     - sqrt_price_1: 结束sqrt价格
+    //     - amount_a: 代币A数量
+    //     - round_up: 是否向上取整
+    // 返回值：流动性值
     public fun get_liquidity_from_a(
         sqrt_price_0: u128,
         sqrt_price_1: u128,
@@ -58,13 +63,13 @@ module eden_clmm::clmm_math {
         (div_res as u128)
     }
 
-   // 根据代币B数量计算流动性
-   // 参数：
-   //     - sqrt_price_0: 起始sqrt价格
-   //     - sqrt_price_1: 结束sqrt价格
-   //     - amount_b: 代币B数量
-   //     - round_up: 是否向上取整
-   // 返回值：流动性值
+    // 根据代币B数量计算流动性
+    // 参数：
+    //     - sqrt_price_0: 起始sqrt价格
+    //     - sqrt_price_1: 结束sqrt价格
+    //     - amount_b: 代币B数量
+    //     - round_up: 是否向上取整
+    // 返回值：流动性值
     public fun get_liquidity_from_b(
         sqrt_price_0: u128,
         sqrt_price_1: u128,
@@ -87,13 +92,13 @@ module eden_clmm::clmm_math {
         (div_res as u128)
     }
 
-   // 计算代币A的数量变化
-   // 参数：
-   //     - sqrt_price_0: 起始sqrt价格
-   //     - sqrt_price_1: 结束sqrt价格
-   //     - liquidity: 流动性
-   //     - round_up: 是否向上取整
-   // 返回值：代币A的数量变化
+    // 计算代币A的数量变化
+    // 参数：
+    //     - sqrt_price_0: 起始sqrt价格
+    //     - sqrt_price_1: 结束sqrt价格
+    //     - liquidity: 流动性
+    //     - round_up: 是否向上取整
+    // 返回值：代币A的数量变化
     public fun get_delta_a(
         sqrt_price_0: u128,
         sqrt_price_1: u128,
@@ -122,13 +127,13 @@ module eden_clmm::clmm_math {
         (quotient as u64)
     }
 
-   // 计算代币B的数量变化
-   // 参数：
-   //     - sqrt_price_0: 起始sqrt价格
-   //     - sqrt_price_1: 结束sqrt价格
-   //     - liquidity: 流动性
-   //     - round_up: 是否向上取整
-   // 返回值：代币B的数量变化
+    // 计算代币B的数量变化
+    // 参数：
+    //     - sqrt_price_0: 起始sqrt价格
+    //     - sqrt_price_1: 结束sqrt价格
+    //     - liquidity: 流动性
+    //     - round_up: 是否向上取整
+    // 返回值：代币B的数量变化
     public fun get_delta_b(
         sqrt_price_0: u128,
         sqrt_price_1: u128,
@@ -155,13 +160,13 @@ module eden_clmm::clmm_math {
         ((product >> 64) as u64)
     }
 
-   // 根据代币A数量计算下一个sqrt价格（向上）
-   // 参数：
-   //     - sqrt_price: 当前sqrt价格
-   //     - liquidity: 流动性
-   //     - amount: 代币A数量
-   //     - by_amount_input: 是否按输入数量计算
-   // 返回值：下一个sqrt价格
+    // 根据代币A数量计算下一个sqrt价格（向上）
+    // 参数：
+    //     - sqrt_price: 当前sqrt价格
+    //     - liquidity: 流动性
+    //     - amount: 代币A数量
+    //     - by_amount_input: 是否按输入数量计算
+    // 返回值：下一个sqrt价格
     public fun get_next_sqrt_price_a_up(
         sqrt_price: u128,
         liquidity: u128,
@@ -182,13 +187,9 @@ module eden_clmm::clmm_math {
         let product = full_math_u128::full_mul_v2(sqrt_price, (amount as u128));
         let new_sqrt_price =
             if (by_amount_input) {
-                (
-                    math_u256::div_round(numberator, (liquidity_shl_64 + product), true) as u128
-                )
+                math_u256::div_round(numberator, (liquidity_shl_64 + product), true) as u128
             } else {
-                (
-                    math_u256::div_round(numberator, (liquidity_shl_64 - product), true) as u128
-                )
+                math_u256::div_round(numberator, (liquidity_shl_64 - product), true) as u128
             };
 
         if (new_sqrt_price > tick_math::max_sqrt_price()) {
@@ -200,13 +201,13 @@ module eden_clmm::clmm_math {
         new_sqrt_price
     }
 
-   // 根据代币B数量计算下一个sqrt价格（向下）
-   // 参数：
-   //     - sqrt_price: 当前sqrt价格
-   //     - liquidity: 流动性
-   //     - amount: 代币B数量
-   //     - by_amount_input: 是否按输入数量计算
-   // 返回值：下一个sqrt价格
+    // 根据代币B数量计算下一个sqrt价格（向下）
+    // 参数：
+    //     - sqrt_price: 当前sqrt价格
+    //     - liquidity: 流动性
+    //     - amount: 代币B数量
+    //     - by_amount_input: 是否按输入数量计算
+    // 返回值：下一个sqrt价格
     public fun get_next_sqrt_price_b_down(
         sqrt_price: u128,
         liquidity: u128,
@@ -214,10 +215,7 @@ module eden_clmm::clmm_math {
         by_amount_input: bool
     ): u128 {
         // 计算delta_sqrt_price：(amount << 64) / liquidity
-        let delta_sqrt_price =
-            math_u128::checked_div_round(
-                ((amount as u128) << 64), liquidity, !by_amount_input
-            );
+        let delta_sqrt_price = math_u128::checked_div_round(((amount as u128) << 64), liquidity, !by_amount_input);
         let new_sqrt_price =
             if (by_amount_input) {
                 sqrt_price + delta_sqrt_price
@@ -234,13 +232,13 @@ module eden_clmm::clmm_math {
         new_sqrt_price
     }
 
-   // 根据输入数量计算下一个sqrt价格
-   // 参数：
-   //     - sqrt_price: 当前sqrt价格
-   //     - liquidity: 流动性
-   //     - amount: 输入数量
-   //     - a_to_b: 是否从A到B的交换
-   // 返回值：下一个sqrt价格
+    // 根据输入数量计算下一个sqrt价格
+    // 参数：
+    //     - sqrt_price: 当前sqrt价格
+    //     - liquidity: 流动性
+    //     - amount: 输入数量
+    //     - a_to_b: 是否从A到B的交换
+    // 返回值：下一个sqrt价格
     public fun get_next_sqrt_price_from_input(
         sqrt_price: u128,
         liquidity: u128,
@@ -254,13 +252,13 @@ module eden_clmm::clmm_math {
         }
     }
 
-   // 根据输出数量计算下一个sqrt价格
-   // 参数：
-   //     - sqrt_price: 当前sqrt价格
-   //     - liquidity: 流动性
-   //     - amount: 输出数量
-   //     - a_to_b: 是否从A到B的交换
-   // 返回值：下一个sqrt价格
+    // 根据输出数量计算下一个sqrt价格
+    // 参数：
+    //     - sqrt_price: 当前sqrt价格
+    //     - liquidity: 流动性
+    //     - amount: 输出数量
+    //     - a_to_b: 是否从A到B的交换
+    // 返回值：下一个sqrt价格
     public fun get_next_sqrt_price_from_output(
         sqrt_price: u128,
         liquidity: u128,
@@ -274,25 +272,13 @@ module eden_clmm::clmm_math {
         }
     }
 
-   // 已弃用：根据输入计算上方delta值
-   // 参数：已弃用的参数
-   // 返回值：抛出弃用错误
-    public fun get_delta_up_from_input(
-        _current_sqrt_price: u128,
-        _target_sqrt_price: u128,
-        _liquidity: u128,
-        _a_to_b: bool
-    ): U256 {
-        abort EFUN_DEPRECATED
-    }
-
-   // 根据输入计算上方delta值（版本2）
-   // 参数：
-   //     - current_sqrt_price: 当前sqrt价格
-   //     - target_sqrt_price: 目标sqrt价格
-   //     - liquidity: 流动性
-   //     - a_to_b: 是否从A到B的交换
-   // 返回值：delta值
+    // 根据输入计算上方delta值（版本2）
+    // 参数：
+    //     - current_sqrt_price: 当前sqrt价格
+    //     - target_sqrt_price: 目标sqrt价格
+    //     - liquidity: 流动性
+    //     - a_to_b: 是否从A到B的交换
+    // 返回值：delta值
     public fun get_delta_up_from_input_v2(
         current_sqrt_price: u128,
         target_sqrt_price: u128,
@@ -311,20 +297,16 @@ module eden_clmm::clmm_math {
         if (a_to_b) {
             // A到B交换：计算代币A的数量
             let (numberator, overflowing) =
-                math_u256::checked_shlw(
-                    full_math_u128::full_mul_v2(liquidity, sqrt_price_diff)
-                );
+                math_u256::checked_shlw(full_math_u128::full_mul_v2(liquidity, sqrt_price_diff));
             if (overflowing) {
                 abort EMULTIPLICATION_OVERFLOW
             };
-            let denominator =
-                full_math_u128::full_mul_v2(current_sqrt_price, target_sqrt_price);
+            let denominator = full_math_u128::full_mul_v2(current_sqrt_price, target_sqrt_price);
             math_u256::div_round(numberator, denominator, true)
         } else {
             // B到A交换：计算代币B的数量
             let product = full_math_u128::full_mul_v2(liquidity, sqrt_price_diff);
-            let lo64_mask =
-                0x000000000000000000000000000000000000000000000000ffffffffffffffff;
+            let lo64_mask = 0x000000000000000000000000000000000000000000000000ffffffffffffffff;
             let should_round_up = (product & lo64_mask) > 0;
             if (should_round_up) {
                 return (product >> 64) + 1
@@ -333,25 +315,14 @@ module eden_clmm::clmm_math {
         }
     }
 
-   // 已弃用：根据输出计算下方delta值
-   // 参数：已弃用的参数
-   // 返回值：抛出弃用错误
-    public fun get_delta_down_from_output(
-        _current_sqrt_price: u128,
-        _target_sqrt_price: u128,
-        _liquidity: u128,
-        _a_to_b: bool
-    ): U256 {
-        abort EFUN_DEPRECATED
-    }
 
-   // 根据输出计算下方delta值（版本2）
-   // 参数：
-   //     - current_sqrt_price: 当前sqrt价格
-   //     - target_sqrt_price: 目标sqrt价格
-   //     - liquidity: 流动性
-   //     - a_to_b: 是否从A到B的交换
-   // 返回值：delta值
+    // 根据输出计算下方delta值（版本2）
+    // 参数：
+    //     - current_sqrt_price: 当前sqrt价格
+    //     - target_sqrt_price: 目标sqrt价格
+    //     - liquidity: 流动性
+    //     - a_to_b: 是否从A到B的交换
+    // 返回值：delta值
     public fun get_delta_down_from_output_v2(
         current_sqrt_price: u128,
         target_sqrt_price: u128,
@@ -380,22 +351,21 @@ module eden_clmm::clmm_math {
             if (overflowing) {
                 abort EMULTIPLICATION_OVERFLOW
             };
-            let denominator =
-                full_math_u128::full_mul_v2(current_sqrt_price, target_sqrt_price);
+            let denominator = full_math_u128::full_mul_v2(current_sqrt_price, target_sqrt_price);
             math_u256::div_round(numberator, denominator, false)
         }
     }
 
-   // 计算交换步骤
-   // 参数：
-   //     - current_sqrt_price: 当前sqrt价格
-   //     - target_sqrt_price: 目标sqrt价格
-   //     - liquidity: 流动性
-   //     - amount: 交换数量
-   //     - fee_rate: 费率
-   //     - a2b: 是否从A到B的交换
-   //     - by_amount_in: 是否按输入数量计算
-   // 返回值：(输入数量, 输出数量, 下一个sqrt价格, 费用数量)
+    // 计算交换步骤
+    // 参数：
+    //     - current_sqrt_price: 当前sqrt价格
+    //     - target_sqrt_price: 目标sqrt价格
+    //     - liquidity: 流动性
+    //     - amount: 交换数量
+    //     - fee_rate: 费率
+    //     - a2b: 是否从A到B的交换
+    //     - by_amount_in: 是否按输入数量计算
+    // 返回值：(输入数量, 输出数量, 下一个sqrt价格, 费用数量)
     public fun compute_swap_step(
         current_sqrt_price: u128,
         target_sqrt_price: u128,
@@ -492,15 +462,15 @@ module eden_clmm::clmm_math {
         (amount_in, amount_out, next_sqrt_price, fee_amount)
     }
 
-   // 根据流动性计算代币数量
-   // 参数：
-   //     - tick_lower: 流动性的下边界tick
-   //     - tick_upper: 流动性的上边界tick
-   //     - current_tick_index: 当前tick索引
-   //     - current_sqrt_price: 当前sqrt价格
-   //     - liquidity: 流动性
-   //     - round_up: 是否向上取整
-   // 返回值：(代币A数量, 代币B数量)
+    // 根据流动性计算代币数量
+    // 参数：
+    //     - tick_lower: 流动性的下边界tick
+    //     - tick_upper: 流动性的上边界tick
+    //     - current_tick_index: 当前tick索引
+    //     - current_sqrt_price: 当前sqrt价格
+    //     - liquidity: 流动性
+    //     - round_up: 是否向上取整
+    // 返回值：(代币A数量, 代币B数量)
     public fun get_amount_by_liquidity(
         tick_lower: I64,
         tick_upper: I64,
@@ -542,15 +512,15 @@ module eden_clmm::clmm_math {
         (amount_a, amount_b)
     }
 
-   // 根据数量计算流动性
-   // 参数：
-   //     - lower_index: 下边界tick索引
-   //     - upper_index: 上边界tick索引
-   //     - current_tick_index: 当前tick索引
-   //     - current_sqrt_price: 当前sqrt价格
-   //     - amount: 代币数量
-   //     - is_fixed_a: 是否固定代币A
-   // 返回值：(流动性, 代币A数量, 代币B数量)
+    // 根据数量计算流动性
+    // 参数：
+    //     - lower_index: 下边界tick索引
+    //     - upper_index: 上边界tick索引
+    //     - current_tick_index: 当前tick索引
+    //     - current_sqrt_price: 当前sqrt价格
+    //     - amount: 代币数量
+    //     - is_fixed_a: 是否固定代币A
+    // 返回值：(流动性, 代币A数量, 代币B数量)
     public fun get_liquidity_from_amount(
         lower_index: I64,
         upper_index: I64,

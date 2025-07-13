@@ -40,32 +40,32 @@ module eden_clmm::pool {
 
     friend eden_clmm::factory;                    // 友元模块：工厂合约可以调用本模块的内部函数
 
-   // tick索引位向量的长度
-   // 用于管理tick的激活状态，每个池子可以有1000个tick索引组
+    // tick索引位向量的长度
+    // 用于管理tick的激活状态，每个池子可以有1000个tick索引组
     const TICK_INDEXES_LENGTH: u64 = 1000;
 
-   // 协议费率的分母（费率=协议费率/10000）
-   // 例如：协议费率为30表示0.3%的费率
+    // 协议费率的分母（费率=协议费率/10000）
+    // 例如：协议费率为30表示0.3%的费率
     const PROTOCOL_FEE_DENOMNINATOR: u64 = 10000;
 
-   // 每个池子支持的奖励器数量
-   // 最多支持3个不同的奖励代币同时进行流动性挖矿
+    // 每个池子支持的奖励器数量
+    // 最多支持3个不同的奖励代币同时进行流动性挖矿
     const REWARDER_NUM: u64 = 3;
 
-   // 一天的秒数，用于奖励计算
+    // 一天的秒数，用于奖励计算
     const DAYS_IN_SECONDS: u128 = 24 * 60 * 60;
 
-   // 默认地址（零地址）
+    // 默认地址（零地址）
     const DEFAULT_ADDRESS: address = @0x0;
 
-   // 位置NFT集合的描述
+    // 位置NFT集合的描述
     const COLLECTION_DESCRIPTION: vector<u8> = b"Eden Liquidity Position";
 
-   // 池子位置NFT的默认URI
+    // 池子位置NFT的默认URI
     const POOL_DEFAULT_URI: vector<u8> = b"https://edbz27ws6curuggjavd2ojwm4td2se5x53elw2rbo3rwwnshkukq.arweave.net/IMOdftLwqRoYyQVHpybM5MepE7fuyLtqIXbjazZHVRU";
 
-   // 错误码定义
-   // 这些错误码覆盖了集中流动性操作中可能出现的各种错误情况
+    // 错误码定义
+    // 这些错误码覆盖了集中流动性操作中可能出现的各种错误情况
 
     const EINVALID_TICK: u64 = 1;
     // 无效的tick索引
@@ -149,326 +149,326 @@ module eden_clmm::pool {
     // 没有权限
     const EINVALID_POOL_URI: u64 = 41;               // 无效的池子URI
 
-   // 集中流动性池子的核心数据结构
-   //
-   // 这是整个DEX的核心数据结构，包含了一个交易对的所有状态信息：
-   // - 流动性管理：当前流动性、tick状态、位置信息
-   // - 价格管理：当前价格、tick索引
-   // - 费用管理：全局费用增长、协议费用
-   // - 奖励管理：流动性挖矿奖励
-   // - 事件管理：各种操作的事件记录
+    // 集中流动性池子的核心数据结构
+    //
+    // 这是整个DEX的核心数据结构，包含了一个交易对的所有状态信息：
+    // - 流动性管理：当前流动性、tick状态、位置信息
+    // - 价格管理：当前价格、tick索引
+    // - 费用管理：全局费用增长、协议费用
+    // - 奖励管理：流动性挖矿奖励
+    // - 事件管理：各种操作的事件记录
     struct Pool has key {
-       // 池子索引，用于标识不同的池子
+        // 池子索引，用于标识不同的池子
         index: u64,
 
-       // 池子位置代币NFT集合名称
+        // 池子位置代币NFT集合名称
         collection_name: String,
 
-       // 池子中的代币A余额
+        // 池子中的代币A余额
         store_a: Object<FungibleStore>,
 
-       // 池子中的代币B余额
+        // 池子中的代币B余额
         store_b: Object<FungibleStore>,
 
-       // 代币A的元数据对象
+        // 代币A的元数据对象
         metadata_a: Object<Metadata>,
 
-       // 代币B的元数据对象
+        // 代币B的元数据对象
         metadata_b: Object<Metadata>,
 
-       // tick间距，决定了价格粒度
-       // 间距越小，价格精度越高，但gas消耗也越大
+        // tick间距，决定了价格粒度
+        // 间距越小，价格精度越高，但gas消耗也越大
         tick_spacing: u64,
 
-       // 交易费率的分子，分母为1_000_000
-       // 例如：fee_rate=3000表示0.3%的交易费
+        // 交易费率的分子，分母为1_000_000
+        // 例如：fee_rate=3000表示0.3%的交易费
         fee_rate: u64,
 
-       // 当前tick索引处的总流动性
-       // 这是当前价格范围内所有位置的流动性总和
+        // 当前tick索引处的总流动性
+        // 这是当前价格范围内所有位置的流动性总和
         liquidity: u128,
 
-       // 当前价格的平方根（Q64.64格式）
-       // 使用平方根价格可以避免精度损失和溢出问题
+        // 当前价格的平方根（Q64.64格式）
+        // 使用平方根价格可以避免精度损失和溢出问题
         current_sqrt_price: u128,
 
-       // 当前tick索引
-       // tick索引决定了当前价格，每个tick代表一个价格点
+        // 当前tick索引
+        // tick索引决定了当前价格，每个tick代表一个价格点
         current_tick_index: I64,
 
-       // 代币A的全局费用增长率（Q64.64格式）
-       // 用于计算每个位置应得的费用分成
+        // 代币A的全局费用增长率（Q64.64格式）
+        // 用于计算每个位置应得的费用分成
         fee_growth_global_a: u128,
 
-       // 代币B的全局费用增长率（Q64.64格式）
+        // 代币B的全局费用增长率（Q64.64格式）
         fee_growth_global_b: u128,
 
-       // 协议应收的代币A费用
-       // 这是从交易费中分配给协议的部分
+        // 协议应收的代币A费用
+        // 这是从交易费中分配给协议的部分
         fee_protocol_coin_a: u64,
 
-       // 协议应收的代币B费用
+        // 协议应收的代币B费用
         fee_protocol_coin_b: u64,
 
-       // tick索引位向量表
-       // 用于快速查找哪些tick被激活（有流动性）
+        // tick索引位向量表
+        // 用于快速查找哪些tick被激活（有流动性）
         tick_indexes: Table<u64, BitVector>,
 
-       // tick数据表
-       // 存储每个tick的详细信息：流动性、费用增长等
+        // tick数据表
+        // 存储每个tick的详细信息：流动性、费用增长等
         ticks: Table<I64, Tick>,
 
-       // 奖励器信息数组
-       // 支持最多3个不同代币的流动性挖矿奖励
+        // 奖励器信息数组
+        // 支持最多3个不同代币的流动性挖矿奖励
         rewarder_infos: vector<Rewarder>,
 
-       // 奖励器最后更新时间
-       // 用于计算奖励分配
+        // 奖励器最后更新时间
+        // 用于计算奖励分配
         rewarder_last_updated_time: u64,
 
-       // 位置信息表
-       // 存储每个流动性位置的详细信息
+        // 位置信息表
+        // 存储每个流动性位置的详细信息
         positions: Table<u64, Position>,
 
-       // 位置计数器
-       // 用于生成新位置的唯一ID
+        // 位置计数器
+        // 用于生成新位置的唯一ID
         position_index: u64,
 
-       // 池子是否暂停
-       // 暂停时不能进行交易和流动性操作
+        // 池子是否暂停
+        // 暂停时不能进行交易和流动性操作
         is_pause: bool,
 
-       // 位置NFT的URI
-       // 用于NFT元数据展示
+        // 位置NFT的URI
+        // 用于NFT元数据展示
         uri: String,
 
-       // 池子账户的签名能力
-       // 用于池子代表用户执行操作
+        // 池子账户的签名能力
+        // 用于池子代表用户执行操作
         signer_cap: account::SignerCapability,
     }
 
-   // 集中流动性池子的tick数据结构
-   //
-   // Tick是集中流动性的核心概念，每个tick代表一个特定的价格点。
-   // 流动性提供者在两个tick之间提供流动性，当价格跨越tick时，
-   // 该tick的流动性会被激活或停用。
+    // 集中流动性池子的tick数据结构
+    //
+    // Tick是集中流动性的核心概念，每个tick代表一个特定的价格点。
+    // 流动性提供者在两个tick之间提供流动性，当价格跨越tick时，
+    // 该tick的流动性会被激活或停用。
     struct Tick has copy, drop, store {
-       // tick索引，对应特定的价格点
+        // tick索引，对应特定的价格点
         index: I64,
 
-       // 该tick对应的价格平方根
-       // 用于快速计算价格相关的数学运算
+        // 该tick对应的价格平方根
+        // 用于快速计算价格相关的数学运算
         sqrt_price: u128,
 
-       // 流动性净变化量（有符号）
-       // 正值表示价格上升时流动性增加，负值表示流动性减少
+        // 流动性净变化量（有符号）
+        // 正值表示价格上升时流动性增加，负值表示流动性减少
         liquidity_net: I128,
 
-       // 流动性总量（无符号）
-       // 表示有多少流动性位置以此tick为边界
+        // 流动性总量（无符号）
+        // 表示有多少流动性位置以此tick为边界
         liquidity_gross: u128,
 
-       // 代币A在该tick外部的费用增长率
-       // 用于计算跨越该tick的位置的费用分成
+        // 代币A在该tick外部的费用增长率
+        // 用于计算跨越该tick的位置的费用分成
         fee_growth_outside_a: u128,
 
-       // 代币B在该tick外部的费用增长率
+        // 代币B在该tick外部的费用增长率
         fee_growth_outside_b: u128,
 
-       // 各个奖励器在该tick外部的增长率
-       // 用于计算流动性挖矿奖励的分配
+        // 各个奖励器在该tick外部的增长率
+        // 用于计算流动性挖矿奖励的分配
         rewarders_growth_outside: vector<u128>,
     }
 
-   // 集中流动性位置数据结构
-   //
-   // Position代表一个流动性提供者在特定价格区间内的流动性位置。
-   // 每个位置都有明确的价格边界（tick_lower到tick_upper），
-   // 只有当当前价格在这个区间内时，该位置的流动性才会被激活用于交易。
+    // 集中流动性位置数据结构
+    //
+    // Position代表一个流动性提供者在特定价格区间内的流动性位置。
+    // 每个位置都有明确的价格边界（tick_lower到tick_upper），
+    // 只有当当前价格在这个区间内时，该位置的流动性才会被激活用于交易。
     struct Position has copy, drop, store {
-       // 该位置所属的池子地址
+        // 该位置所属的池子地址
         pool: address,
 
-       // 位置的唯一标识符
+        // 位置的唯一标识符
         index: u64,
 
-       // 该位置提供的流动性数量
-       // 流动性数量决定了该位置在价格区间内能够支持的交易量
+        // 该位置提供的流动性数量
+        // 流动性数量决定了该位置在价格区间内能够支持的交易量
         liquidity: u128,
 
-       // 位置的下边界tick索引
-       // 当价格低于此tick时，该位置的流动性不会被使用
+        // 位置的下边界tick索引
+        // 当价格低于此tick时，该位置的流动性不会被使用
         tick_lower_index: I64,
 
-       // 位置的上边界tick索引
-       // 当价格高于此tick时，该位置的流动性不会被使用
+        // 位置的上边界tick索引
+        // 当价格高于此tick时，该位置的流动性不会被使用
         tick_upper_index: I64,
 
-       // 该位置内部代币A的费用增长率
-       // 用于计算该位置应得的代币A费用分成
+        // 该位置内部代币A的费用增长率
+        // 用于计算该位置应得的代币A费用分成
         fee_growth_inside_a: u128,
 
-       // 该位置累计应得的代币A费用
-       // 这是已经计算但尚未提取的费用
+        // 该位置累计应得的代币A费用
+        // 这是已经计算但尚未提取的费用
         fee_owed_a: u64,
 
-       // 该位置内部代币B的费用增长率
-       // 用于计算该位置应得的代币B费用分成
+        // 该位置内部代币B的费用增长率
+        // 用于计算该位置应得的代币B费用分成
         fee_growth_inside_b: u128,
 
-       // 该位置累计应得的代币B费用
+        // 该位置累计应得的代币B费用
         fee_owed_b: u64,
 
-       // 该位置的奖励器信息数组
-       // 记录每个奖励器对该位置的奖励分配情况
+        // 该位置的奖励器信息数组
+        // 记录每个奖励器对该位置的奖励分配情况
         rewarder_infos: vector<PositionRewarder>,
     }
 
-   // 流动性挖矿奖励器数据结构
-   //
-   // Rewarder负责管理流动性挖矿的奖励分配，每个奖励器对应一种奖励代币。
-   // 奖励器按照流动性提供者的贡献比例分配奖励，激励用户提供流动性。
+    // 流动性挖矿奖励器数据结构
+    //
+    // Rewarder负责管理流动性挖矿的奖励分配，每个奖励器对应一种奖励代币。
+    // 奖励器按照流动性提供者的贡献比例分配奖励，激励用户提供流动性。
     struct Rewarder has copy, drop, store {
-       // 奖励代币的类型信息
-       // 用于识别奖励使用的是哪种代币
+        // 奖励代币的类型信息
+        // 用于识别奖励使用的是哪种代币
         token: Object<Metadata>,
 
-       // 奖励器的管理权限地址
-       // 只有该地址可以修改奖励器的参数
+        // 奖励器的管理权限地址
+        // 只有该地址可以修改奖励器的参数
         authority: address,
 
-       // 待转移的权限地址
-       // 用于权限转移的两步验证流程
+        // 待转移的权限地址
+        // 用于权限转移的两步验证流程
         pending_authority: address,
 
-       // 每秒钟的奖励发放数量
-       // 控制奖励的发放速度
+        // 每秒钟的奖励发放数量
+        // 控制奖励的发放速度
         emissions_per_second: u128,
 
-       // 全局奖励增长率
-       // 用于计算每个位置应得的奖励分成
+        // 全局奖励增长率
+        // 用于计算每个位置应得的奖励分成
         growth_global: u128
     }
 
-   // 位置奖励器数据结构
-   //
-   // 记录每个位置在特定奖励器中的奖励分配情况，
-   // 用于计算该位置应得的奖励数量。
+    // 位置奖励器数据结构
+    //
+    // 记录每个位置在特定奖励器中的奖励分配情况，
+    // 用于计算该位置应得的奖励数量。
     struct PositionRewarder has drop, copy, store {
-       // 该位置内部的奖励增长率
-       // 用于计算该位置应得的奖励分成
+        // 该位置内部的奖励增长率
+        // 用于计算该位置应得的奖励分成
         growth_inside: u128,
 
-       // 该位置累计应得的奖励数量
-       // 这是已经计算但尚未提取的奖励
+        // 该位置累计应得的奖励数量
+        // 这是已经计算但尚未提取的奖励
         amount_owed: u64,
     }
 
-   // 闪电交换收据
-   //
-   // 闪电交换是DEX的核心功能，允许用户在同一笔交易中先获得代币，再支付相应的费用。
-   // 这个收据记录了闪电交换的关键信息，用于确保交易的原子性和安全性。
-   //
-   // 在Move语言中，无法传递回调数据和进行动态调用，但可以使用资源来实现这一目的。
-   // 为了确保执行在单个交易中完成，闪电交换函数必须返回一个不能被复制、
-   // 不能被保存、不能被丢弃或克隆的资源。
+    // 闪电交换收据
+    //
+    // 闪电交换是DEX的核心功能，允许用户在同一笔交易中先获得代币，再支付相应的费用。
+    // 这个收据记录了闪电交换的关键信息，用于确保交易的原子性和安全性。
+    //
+    // 在Move语言中，无法传递回调数据和进行动态调用，但可以使用资源来实现这一目的。
+    // 为了确保执行在单个交易中完成，闪电交换函数必须返回一个不能被复制、
+    // 不能被保存、不能被丢弃或克隆的资源。
     struct FlashSwapReceipt {
-       // 进行闪电交换的池子地址
+        // 进行闪电交换的池子地址
         pool_address: address,
 
-       // 交换方向：true表示A换B，false表示B换A
+        // 交换方向：true表示A换B，false表示B换A
         a2b: bool,
 
-       // 合作伙伴名称，用于费用分成
+        // 合作伙伴名称，用于费用分成
         partner_name: String,
 
-       // 需要支付的代币数量
+        // 需要支付的代币数量
         pay_amount: u64,
 
-       // 合作伙伴推荐费用数量
+        // 合作伙伴推荐费用数量
         ref_fee_amount: u64
     }
 
-   // 添加流动性收据
-   //
-   // 用于添加流动性操作的两阶段提交，确保用户支付正确的代币数量。
+    // 添加流动性收据
+    //
+    // 用于添加流动性操作的两阶段提交，确保用户支付正确的代币数量。
     struct AddLiquidityReceipt {
-       // 操作的池子地址
+        // 操作的池子地址
         pool_address: address,
 
-       // 需要支付的代币A数量
+        // 需要支付的代币A数量
         amount_a: u64,
 
-       // 需要支付的代币B数量
+        // 需要支付的代币B数量
         amount_b: u64
     }
 
-   // 交换结果数据结构
-   //
-   // 记录一次交换操作的完整结果信息。
+    // 交换结果数据结构
+    //
+    // 记录一次交换操作的完整结果信息。
     struct SwapResult has copy, drop {
-       // 实际输入的代币数量
+        // 实际输入的代币数量
         amount_in: u64,
 
-       // 实际输出的代币数量
+        // 实际输出的代币数量
         amount_out: u64,
 
-       // 支付的交易费用
+        // 支付的交易费用
         fee_amount: u64,
 
-       // 合作伙伴推荐费用
+        // 合作伙伴推荐费用
         ref_fee_amount: u64,
     }
 
-   // 计算出的交换结果数据结构
-   //
-   // 包含交换操作的详细计算结果，用于预估和验证。
+    // 计算出的交换结果数据结构
+    //
+    // 包含交换操作的详细计算结果，用于预估和验证。
     struct CalculatedSwapResult has copy, drop, store {
-       // 计算的输入代币数量
+        // 计算的输入代币数量
         amount_in: u64,
 
-       // 计算的输出代币数量
+        // 计算的输出代币数量
         amount_out: u64,
 
-       // 计算的交易费用
+        // 计算的交易费用
         fee_amount: u64,
 
-       // 使用的费率
+        // 使用的费率
         fee_rate: u64,
 
-       // 交换后的价格平方根
+        // 交换后的价格平方根
         after_sqrt_price: u128,
 
-       // 是否超出了价格限制
+        // 是否超出了价格限制
         is_exceed: bool,
 
-       // 每一步的交换结果详情
+        // 每一步的交换结果详情
         step_results: vector<SwapStepResult>
     }
 
-   // 单步交换结果数据结构
-   //
-   // 记录交换过程中每一步的详细信息，用于调试和审计。
+    // 单步交换结果数据结构
+    //
+    // 记录交换过程中每一步的详细信息，用于调试和审计。
     struct SwapStepResult has copy, drop, store {
-       // 当前步骤开始时的价格平方根
+        // 当前步骤开始时的价格平方根
         current_sqrt_price: u128,
 
-       // 目标价格平方根
+        // 目标价格平方根
         target_sqrt_price: u128,
 
-       // 当前步骤的流动性
+        // 当前步骤的流动性
         current_liquidity: u128,
 
-       // 该步骤的输入数量
+        // 该步骤的输入数量
         amount_in: u64,
 
-       // 该步骤的输出数量
+        // 该步骤的输出数量
         amount_out: u64,
 
-       // 该步骤的费用
+        // 该步骤的费用
         fee_amount: u64,
 
-       // 剩余未处理的数量
+        // 剩余未处理的数量
         remainer_amount: u64
     }
 
@@ -476,258 +476,258 @@ module eden_clmm::pool {
     // ============================================================================================================
     // 这些事件结构体用于记录池子中发生的各种重要操作，便于前端监听和数据分析
 
-   // 开启位置事件
-   // 当用户创建新的流动性位置时触发
+    // 开启位置事件
+    // 当用户创建新的流动性位置时触发
     #[event]
     struct OpenPositionEvent has drop, store {
-       // 用户地址
+        // 用户地址
         user: address,
 
-       // 池子地址
+        // 池子地址
         pool: address,
 
-       // 位置的下边界tick
+        // 位置的下边界tick
         tick_lower: I64,
 
-       // 位置的上边界tick
+        // 位置的上边界tick
         tick_upper: I64,
 
-       // 位置索引
+        // 位置索引
         index: u64
     }
 
-   // 关闭位置事件
-   // 当用户关闭流动性位置时触发
+    // 关闭位置事件
+    // 当用户关闭流动性位置时触发
     #[event]
     struct ClosePositionEvent has drop, store {
-       // 用户地址
+        // 用户地址
         user: address,
 
-       // 池子地址
+        // 池子地址
         pool: address,
 
-       // 位置索引
+        // 位置索引
         index: u64
     }
 
-   // 添加流动性事件
-   // 当用户向位置添加流动性时触发
+    // 添加流动性事件
+    // 当用户向位置添加流动性时触发
     #[event]
     struct AddLiquidityEvent has drop, store {
-       // 池子地址
+        // 池子地址
         pool_address: address,
 
-       // 位置的下边界tick
+        // 位置的下边界tick
         tick_lower: I64,
 
-       // 位置的上边界tick
+        // 位置的上边界tick
         tick_upper: I64,
 
-       // 添加的流动性数量
+        // 添加的流动性数量
         liquidity: u128,
 
-       // 添加的代币A数量
+        // 添加的代币A数量
         amount_a: u64,
 
-       // 添加的代币B数量
+        // 添加的代币B数量
         amount_b: u64,
 
-       // 位置索引
+        // 位置索引
         index: u64
     }
 
-   // 移除流动性事件
-   // 当用户从位置移除流动性时触发
+    // 移除流动性事件
+    // 当用户从位置移除流动性时触发
     #[event]
     struct RemoveLiquidityEvent has drop, store {
-       // 池子地址
+        // 池子地址
         pool_address: address,
 
-       // 位置的下边界tick
+        // 位置的下边界tick
         tick_lower: I64,
 
-       // 位置的上边界tick
+        // 位置的上边界tick
         tick_upper: I64,
 
-       // 移除的流动性数量
+        // 移除的流动性数量
         liquidity: u128,
 
-       // 移除的代币A数量
+        // 移除的代币A数量
         amount_a: u64,
 
-       // 移除的代币B数量
+        // 移除的代币B数量
         amount_b: u64,
 
-       // 位置索引
+        // 位置索引
         index: u64
     }
 
-   // 交换事件
-   // 当用户进行代币交换时触发
+    // 交换事件
+    // 当用户进行代币交换时触发
     #[event]
     struct SwapEvent has drop, store {
-       // 交换方向：true为A换B，false为B换A
+        // 交换方向：true为A换B，false为B换A
         atob: bool,
 
-       // 池子地址
+        // 池子地址
         pool_address: address,
 
-       // 交换发起者地址
+        // 交换发起者地址
         swap_from: address,
 
-       // 合作伙伴名称
+        // 合作伙伴名称
         partner: String,
 
-       // 输入代币数量
+        // 输入代币数量
         amount_in: u64,
 
-       // 输出代币数量
+        // 输出代币数量
         amount_out: u64,
 
-       // 合作伙伴推荐费用
+        // 合作伙伴推荐费用
         ref_amount: u64,
 
-       // 交易费用
+        // 交易费用
         fee_amount: u64,
 
-       // 池子中代币A的余额
+        // 池子中代币A的余额
         vault_a_amount: u64,
 
-       // 池子中代币B的余额
+        // 池子中代币B的余额
         vault_b_amount: u64,
     }
 
-   // 收集协议费用事件
-   // 当协议管理员收集协议费用时触发
+    // 收集协议费用事件
+    // 当协议管理员收集协议费用时触发
     #[event]
     struct CollectProtocolFeeEvent has drop, store {
-       // 池子地址
+        // 池子地址
         pool_address: address,
 
-       // 收集的代币A费用
+        // 收集的代币A费用
         amount_a: u64,
 
-       // 收集的代币B费用
+        // 收集的代币B费用
         amount_b: u64
     }
 
-   // 收集费用事件
-   // 当用户收集位置费用时触发
+    // 收集费用事件
+    // 当用户收集位置费用时触发
     #[event]
     struct CollectFeeEvent has drop, store {
-       // 位置索引
+        // 位置索引
         index: u64,
 
-       // 用户地址
+        // 用户地址
         user: address,
 
-       // 池子地址
+        // 池子地址
         pool_address: address,
 
-       // 收集的代币A费用
+        // 收集的代币A费用
         amount_a: u64,
 
-       // 收集的代币B费用
+        // 收集的代币B费用
         amount_b: u64
     }
 
-   // 更新费率事件
-   // 当协议管理员更新池子费率时触发
+    // 更新费率事件
+    // 当协议管理员更新池子费率时触发
     #[event]
     struct UpdateFeeRateEvent has drop, store {
-       // 池子地址
+        // 池子地址
         pool_address: address,
 
-       // 旧费率
+        // 旧费率
         old_fee_rate: u64,
 
-       // 新费率
+        // 新费率
         new_fee_rate: u64
     }
 
-   // 更新奖励发放事件
-   // 当奖励器管理员更新奖励发放速率时触发
+    // 更新奖励发放事件
+    // 当奖励器管理员更新奖励发放速率时触发
     #[event]
     struct UpdateEmissionEvent has drop, store {
-       // 池子地址
+        // 池子地址
         pool_address: address,
 
-       // 奖励器索引
+        // 奖励器索引
         index: u8,
 
-       // 每秒发放数量
+        // 每秒发放数量
         emissions_per_second: u128,
     }
 
-   // 转移奖励权限事件
-   // 当奖励器权限被转移时触发
+    // 转移奖励权限事件
+    // 当奖励器权限被转移时触发
     #[event]
     struct TransferRewardAuthEvent has drop, store {
-       // 池子地址
+        // 池子地址
         pool_address: address,
 
-       // 奖励器索引
+        // 奖励器索引
         index: u8,
 
-       // 旧权限地址
+        // 旧权限地址
         old_authority: address,
 
-       // 新权限地址
+        // 新权限地址
         new_authority: address
     }
 
-   // 接受奖励权限事件
-   // 当新权限地址接受奖励器权限时触发
+    // 接受奖励权限事件
+    // 当新权限地址接受奖励器权限时触发
     #[event]
     struct AcceptRewardAuthEvent has drop, store {
-       // 池子地址
+        // 池子地址
         pool_address: address,
 
-       // 奖励器索引
+        // 奖励器索引
         index: u8,
 
-       // 权限地址
+        // 权限地址
         authority: address
     }
 
-   // 收集奖励事件
-   // 当用户收集流动性挖矿奖励时触发
+    // 收集奖励事件
+    // 当用户收集流动性挖矿奖励时触发
     #[event]
     struct CollectRewardEvent has drop, store {
-       // 位置索引
+        // 位置索引
         pos_index: u64,
 
-       // 用户地址
+        // 用户地址
         user: address,
 
-       // 池子地址
+        // 池子地址
         pool_address: address,
 
-       // 收集的奖励数量
+        // 收集的奖励数量
         amount: u64,
 
-       // 奖励器索引
+        // 奖励器索引
         index: u8
     }
 
     // 公共函数
     // ============================================================================================================
 
-   // 初始化一个新的集中流动性池子
-   //
-   // 这是创建新交易对池子的核心函数，只能由工厂合约调用。
-   // 它会设置池子的基本参数，创建NFT集合，并初始化所有必要的数据结构。
-   //
-   // 参数：
-   //     - account: 池子资源账户（用于存储池子数据）
-   //     - tick_spacing: tick间距，决定价格精度和gas消耗
-   //     - init_sqrt_price: 初始价格的平方根
-   //     - index: 池子索引，用于标识不同的池子
-   //     - uri: 位置NFT集合的URI
-   //     - signer_cap: 池子资源账户的签名能力
-   //
-   // 返回：
-   //     - pool_name: 池子的位置NFT集合名称
+    // 初始化一个新的集中流动性池子
+    //
+    // 这是创建新交易对池子的核心函数，只能由工厂合约调用。
+    // 它会设置池子的基本参数，创建NFT集合，并初始化所有必要的数据结构。
+    //
+    // 参数：
+    //     - account: 池子资源账户（用于存储池子数据）
+    //     - tick_spacing: tick间距，决定价格精度和gas消耗
+    //     - init_sqrt_price: 初始价格的平方根
+    //     - index: 池子索引，用于标识不同的池子
+    //     - uri: 位置NFT集合的URI
+    //     - signer_cap: 池子资源账户的签名能力
+    //
+    // 返回：
+    //     - pool_name: 池子的位置NFT集合名称
     ///
     public(friend) fun new(
         account: &signer,
@@ -798,30 +798,15 @@ module eden_clmm::pool {
         collection_name
     }
 
-   // 重置池子的初始价格（如果池子从未添加过流动性）
-   //
-   // 这个函数已被禁用，使用reset_init_price_v2代替
-   //
-   // 参数：
-   //     - pool_address: 池子账户地址
-   //     - new_initialize_price: 池子的新初始价格平方根
-    public fun reset_init_price(_pool_address: address, _new_initialize_price: u128) {
-        abort EFUNC_DISABLED
-        //let pool = borrow_global_mut<Pool>(pool_address);
-        //assert!(pool.position_index == 1, EPOOL_LIQUIDITY_IS_NOT_ZERO);
-        //pool.current_sqrt_price = new_initialize_price;
-        //pool.current_tick_index = tick_math::get_tick_at_sqrt_price(new_initialize_price);
-    }
-
-   // 重置池子的初始价格（版本2）
-   //
-   // 只有在池子从未添加过任何流动性的情况下才能重置初始价格。
-   // 这个功能用于在池子创建后但添加流动性前修正价格设置错误。
-   //
-   // 参数：
-   //     - account: 有权限重置价格的账户
-   //     - pool_address: 池子地址
-   //     - new_initialize_price: 新的初始价格平方根
+    // 重置池子的初始价格（版本2）
+    //
+    // 只有在池子从未添加过任何流动性的情况下才能重置初始价格。
+    // 这个功能用于在池子创建后但添加流动性前修正价格设置错误。
+    //
+    // 参数：
+    //     - account: 有权限重置价格的账户
+    //     - pool_address: 池子地址
+    //     - new_initialize_price: 新的初始价格平方根
     public fun reset_init_price_v2(
         account: &signer,
         pool_address: address,
@@ -844,14 +829,14 @@ module eden_clmm::pool {
         pool.current_tick_index = tick_math::get_tick_at_sqrt_price(new_initialize_price);
     }
 
-   // 暂停池子
-   //
-   // 暂停池子会阻止所有交易和流动性操作，用于紧急情况或维护。
-   // 只有协议管理员可以暂停池子。
-   //
-   // 参数：
-   //     - account: 协议权限签名者
-   //     - pool_address: 池子账户地址
+    // 暂停池子
+    //
+    // 暂停池子会阻止所有交易和流动性操作，用于紧急情况或维护。
+    // 只有协议管理员可以暂停池子。
+    //
+    // 参数：
+    //     - account: 协议权限签名者
+    //     - pool_address: 池子账户地址
     public fun pause(
         account: &signer,
         pool_address: address
@@ -863,14 +848,14 @@ module eden_clmm::pool {
         pool.is_pause = true;
     }
 
-   // 恢复池子
-   //
-   // 恢复被暂停的池子，使其可以正常进行交易和流动性操作。
-   // 只有协议管理员可以恢复池子。
-   //
-   // 参数：
-   //     - account: 协议权限签名者
-   //     - pool_address: 池子账户地址
+    // 恢复池子
+    //
+    // 恢复被暂停的池子，使其可以正常进行交易和流动性操作。
+    // 只有协议管理员可以恢复池子。
+    //
+    // 参数：
+    //     - account: 协议权限签名者
+    //     - pool_address: 池子账户地址
     public fun unpause(
         account: &signer,
         pool_address: address
@@ -882,15 +867,15 @@ module eden_clmm::pool {
         pool.is_pause = false;
     }
 
-   // 更新池子费率
-   //
-   // 允许协议管理员动态调整池子的交易费率。
-   // 费率变更会立即生效，影响后续的所有交易。
-   //
-   // 参数：
-   //     - account: 协议权限签名者
-   //     - pool_address: 池子地址
-   //     - fee_rate: 新的费率（分子，分母为1,000,000）
+    // 更新池子费率
+    //
+    // 允许协议管理员动态调整池子的交易费率。
+    // 费率变更会立即生效，影响后续的所有交易。
+    //
+    // 参数：
+    //     - account: 协议权限签名者
+    //     - pool_address: 池子地址
+    //     - fee_rate: 新的费率（分子，分母为1,000,000）
     public fun update_fee_rate(
         account: &signer,
         pool_address: address,
@@ -917,20 +902,20 @@ module eden_clmm::pool {
         })
     }
 
-   // 开启新的流动性位置
-   //
-   // 创建一个新的集中流动性位置，指定价格区间。
-   // 位置创建后会铸造对应的NFT作为所有权凭证。
-   // 注意：此时位置还没有流动性，需要调用add_liquidity来添加。
-   //
-   // 参数：
-   //     - account: 位置所有者
-   //     - pool_address: 池子账户地址
-   //     - tick_lower_index: 位置的下边界tick索引
-   //     - tick_upper_index: 位置的上边界tick索引
-   //
-   // 返回：
-   //     - position_index: 新创建位置的索引
+    // 开启新的流动性位置
+    //
+    // 创建一个新的集中流动性位置，指定价格区间。
+    // 位置创建后会铸造对应的NFT作为所有权凭证。
+    // 注意：此时位置还没有流动性，需要调用add_liquidity来添加。
+    //
+    // 参数：
+    //     - account: 位置所有者
+    //     - pool_address: 池子账户地址
+    //     - tick_lower_index: 位置的下边界tick索引
+    //     - tick_upper_index: 位置的上边界tick索引
+    //
+    // 返回：
+    //     - position_index: 新创建位置的索引
     public fun open_position(
         account: &signer,
         pool_address: address,
@@ -979,18 +964,18 @@ module eden_clmm::pool {
         position_index
     }
 
-   // 按流动性数量向位置添加流动性
-   //
-   // 这是添加流动性的基础方法之一，直接指定要添加的流动性数量。
-   // 任何人都可以向任何位置添加流动性，请在调用前检查位置的所有权。
-   //
-   // 参数：
-   //     - pool_address: 池子账户地址
-   //     - liquidity: 要添加的流动性数量
-   //     - position_index: 位置索引
-   //
-   // 返回：
-   //     - receipt: 添加流动性收据（热土豆模式，必须立即处理）
+    // 按流动性数量向位置添加流动性
+    //
+    // 这是添加流动性的基础方法之一，直接指定要添加的流动性数量。
+    // 任何人都可以向任何位置添加流动性，请在调用前检查位置的所有权。
+    //
+    // 参数：
+    //     - pool_address: 池子账户地址
+    //     - liquidity: 要添加的流动性数量
+    //     - position_index: 位置索引
+    //
+    // 返回：
+    //     - receipt: 添加流动性收据（热土豆模式，必须立即处理）
     public fun add_liquidity(
         pool_address: address,
         liquidity: u128,
@@ -1008,20 +993,20 @@ module eden_clmm::pool {
         )
     }
 
-   // 按固定代币数量向位置添加流动性
-   //
-   // 这是另一种添加流动性的方法，通过固定一种代币的数量来添加流动性。
-   // 系统会自动计算需要的另一种代币数量以保持价格比例。
-   // 任何人都可以向任何位置添加流动性，请在调用前检查位置的所有权。
-   //
-   // 参数：
-   //     - pool_address: 池子账户地址
-   //     - amount: 固定的代币数量
-   //     - fix_amount_a: 如果为true，amount是代币A的数量；否则是代币B的数量
-   //     - position_index: 位置索引
-   //
-   // 返回：
-   //     - receipt: 添加流动性收据（热土豆模式，必须立即处理）
+    // 按固定代币数量向位置添加流动性
+    //
+    // 这是另一种添加流动性的方法，通过固定一种代币的数量来添加流动性。
+    // 系统会自动计算需要的另一种代币数量以保持价格比例。
+    // 任何人都可以向任何位置添加流动性，请在调用前检查位置的所有权。
+    //
+    // 参数：
+    //     - pool_address: 池子账户地址
+    //     - amount: 固定的代币数量
+    //     - fix_amount_a: 如果为true，amount是代币A的数量；否则是代币B的数量
+    //     - position_index: 位置索引
+    //
+    // 返回：
+    //     - receipt: 添加流动性收据（热土豆模式，必须立即处理）
     public fun add_liquidity_fix_coin(
         pool_address: address,
         amount: u64,
@@ -1040,15 +1025,15 @@ module eden_clmm::pool {
         )
     }
 
-   // 偿还代币以完成流动性添加
-   //
-   // 这是添加流动性操作的第二步，用户需要支付相应数量的代币。
-   // 这种两步操作确保了原子性：要么完全成功，要么完全失败。
-   //
-   // 参数：
-   //     - coin_a: 代币A
-   //     - coin_b: 代币B
-   //     - receipt: 添加流动性收据（热土豆模式）
+    // 偿还代币以完成流动性添加
+    //
+    // 这是添加流动性操作的第二步，用户需要支付相应数量的代币。
+    // 这种两步操作确保了原子性：要么完全成功，要么完全失败。
+    //
+    // 参数：
+    //     - coin_a: 代币A
+    //     - coin_b: 代币B
+    //     - receipt: 添加流动性收据（热土豆模式）
     public fun repay_add_liquidity(
         asset_a: FungibleAsset,
         asset_b: FungibleAsset,
@@ -1071,20 +1056,20 @@ module eden_clmm::pool {
         fungible_asset::deposit(pool.store_b, asset_b);
     }
 
-   // 从池子中移除流动性
-   //
-   // 从指定位置移除一定数量的流动性，并返回相应的代币。
-   // 移除流动性时会同时更新位置的费用和奖励，确保用户能收到应得的收益。
-   //
-   // 参数：
-   //     - account: 位置所有者
-   //     - pool_address: 池子账户地址
-   //     - liquidity: 要移除的流动性数量
-   //     - position_index: 位置索引
-   //
-   // 返回：
-   //     - coin_a: 退还给用户的代币A
-   //     - coin_b: 退还给用户的代币B
+    // 从池子中移除流动性
+    //
+    // 从指定位置移除一定数量的流动性，并返回相应的代币。
+    // 移除流动性时会同时更新位置的费用和奖励，确保用户能收到应得的收益。
+    //
+    // 参数：
+    //     - account: 位置所有者
+    //     - pool_address: 池子账户地址
+    //     - liquidity: 要移除的流动性数量
+    //     - position_index: 位置索引
+    //
+    // 返回：
+    //     - coin_a: 退还给用户的代币A
+    //     - coin_b: 退还给用户的代币B
     public fun remove_liquidity(
         account: &signer,
         pool_address: address,
@@ -1164,20 +1149,20 @@ module eden_clmm::pool {
         (asset_a, asset_b)
     }
 
-   // 检查并关闭位置
-   //
-   // 关闭一个流动性位置，但只有在满足特定条件时才能成功关闭：
-   // 1. 位置的流动性为零
-   // 2. 位置没有未收取的交易费用
-   // 3. 位置没有未收取的奖励
-   //
-   // 参数：
-   //     - account: 位置所有者
-   //     - pool_address: 池子账户地址
-   //     - position_index: 位置索引
-   //
-   // 返回：
-   //     - is_closed: 是否成功关闭位置
+    // 检查并关闭位置
+    //
+    // 关闭一个流动性位置，但只有在满足特定条件时才能成功关闭：
+    // 1. 位置的流动性为零
+    // 2. 位置没有未收取的交易费用
+    // 3. 位置没有未收取的奖励
+    //
+    // 参数：
+    //     - account: 位置所有者
+    //     - pool_address: 池子账户地址
+    //     - position_index: 位置索引
+    //
+    // 返回：
+    //     - is_closed: 是否成功关闭位置
     public fun checked_close_position(
         account: &signer,
         pool_address: address,
@@ -1229,20 +1214,20 @@ module eden_clmm::pool {
         true
     }
 
-   // 收集位置的流动性费用
-   //
-   // 收集位置产生的交易费用分成。费用来自于在该位置价格区间内进行的交易。
-   // 可以选择是否重新计算费用，以确保获得最新的费用分成。
-   //
-   // 参数：
-   //     - account: 位置所有者
-   //     - pool_address: 池子地址
-   //     - position_index: 位置索引
-   //     - recalculate: 是否重新计算位置费用
-   //
-   // 返回：
-   //     - coin_a: 位置的代币A费用
-   //     - coin_b: 位置的代币B费用
+    // 收集位置的流动性费用
+    //
+    // 收集位置产生的交易费用分成。费用来自于在该位置价格区间内进行的交易。
+    // 可以选择是否重新计算费用，以确保获得最新的费用分成。
+    //
+    // 参数：
+    //     - account: 位置所有者
+    //     - pool_address: 池子地址
+    //     - position_index: 位置索引
+    //     - recalculate: 是否重新计算位置费用
+    //
+    // 返回：
+    //     - coin_a: 位置的代币A费用
+    //     - coin_b: 位置的代币B费用
     public fun collect_fee(
         account: &signer,
         pool_address: address,
@@ -1295,20 +1280,20 @@ module eden_clmm::pool {
         (asset_a, asset_b)
     }
 
-   // 收集位置的流动性挖矿奖励
-   //
-   // 收集指定奖励器的奖励代币。奖励来自于流动性挖矿计划，
-   // 按照流动性提供者的贡献比例分配。支持收集最多3种不同的奖励代币。
-   //
-   // 参数：
-   //     - account: 位置所有者
-   //     - pool_address: 池子地址
-   //     - position_index: 位置索引
-   //     - rewarder_index: 奖励器索引（0-2）
-   //     - recalculate: 是否重新计算位置奖励
-   //
-   // 返回：
-   //     - coin: 奖励代币
+    // 收集位置的流动性挖矿奖励
+    //
+    // 收集指定奖励器的奖励代币。奖励来自于流动性挖矿计划，
+    // 按照流动性提供者的贡献比例分配。支持收集最多3种不同的奖励代币。
+    //
+    // 参数：
+    //     - account: 位置所有者
+    //     - pool_address: 池子地址
+    //     - position_index: 位置索引
+    //     - rewarder_index: 奖励器索引（0-2）
+    //     - recalculate: 是否重新计算位置奖励
+    //
+    // 返回：
+    //     - coin: 奖励代币
     public fun collect_rewarder(
         account: &signer,
         pool_address: address,
@@ -1359,15 +1344,15 @@ module eden_clmm::pool {
         rewarder_coin
     }
 
-   // 更新池子的位置NFT集合和代币URI
-   //
-   // 允许有权限的账户更新池子位置NFT的显示URI，
-   // 这会影响NFT在钱包和市场中的显示效果。
-   //
-   // 参数：
-   //     - account: 设置者（需要有相应权限）
-   //     - pool_address: 池子地址
-   //     - uri: 新的URI
+    // 更新池子的位置NFT集合和代币URI
+    //
+    // 允许有权限的账户更新池子位置NFT的显示URI，
+    // 这会影响NFT在钱包和市场中的显示效果。
+    //
+    // 参数：
+    //     - account: 设置者（需要有相应权限）
+    //     - pool_address: 池子地址
+    //     - uri: 新的URI
     public fun update_pool_uri(
         account: &signer,
         pool_address: address,
@@ -1384,31 +1369,31 @@ module eden_clmm::pool {
         pool.uri = uri;
     }
 
-   // 闪电交换 - DEX的核心交易功能
-   //
-   // 这是集中流动性DEX的核心交易函数，实现了高效的代币交换。
-   // 支持两种交换模式：固定输入量或固定输出量。
-   // 使用闪电贷模式，先提供输出代币，后收取输入代币，确保原子性。
-   //
-   // 交换过程：
-   // 1. 计算交换路径和价格影响
-   // 2. 更新池子状态（价格、流动性、tick）
-   // 3. 立即提供输出代币
-   // 4. 返回收据，要求用户稍后支付输入代币
-   //
-   // 参数：
-   //     - pool_address: 池子地址
-   //     - swap_from: 交换发起者地址（用于事件记录）
-   //     - partner_name: 合作伙伴名称（用于费用分成）
-   //     - a2b: 交换方向（true: A换B, false: B换A）
-   //     - by_amount_in: 按输入量还是输出量计算（true: 固定输入, false: 固定输出）
-   //     - amount: 数量（根据by_amount_in决定是输入量还是输出量）
-   //     - sqrt_price_limit: 价格滑点保护限制
-   //
-   // 返回：
-   //     - coin_a: 输出的代币A（如果a2b为true则为零）
-   //     - coin_b: 输出的代币B（如果a2b为false则为零）
-   //     - receipt: 闪电贷收据（热土豆，必须立即处理）
+    // 闪电交换 - DEX的核心交易功能
+    //
+    // 这是集中流动性DEX的核心交易函数，实现了高效的代币交换。
+    // 支持两种交换模式：固定输入量或固定输出量。
+    // 使用闪电贷模式，先提供输出代币，后收取输入代币，确保原子性。
+    //
+    // 交换过程：
+    // 1. 计算交换路径和价格影响
+    // 2. 更新池子状态（价格、流动性、tick）
+    // 3. 立即提供输出代币
+    // 4. 返回收据，要求用户稍后支付输入代币
+    //
+    // 参数：
+    //     - pool_address: 池子地址
+    //     - swap_from: 交换发起者地址（用于事件记录）
+    //     - partner_name: 合作伙伴名称（用于费用分成）
+    //     - a2b: 交换方向（true: A换B, false: B换A）
+    //     - by_amount_in: 按输入量还是输出量计算（true: 固定输入, false: 固定输出）
+    //     - amount: 数量（根据by_amount_in决定是输入量还是输出量）
+    //     - sqrt_price_limit: 价格滑点保护限制
+    //
+    // 返回：
+    //     - coin_a: 输出的代币A（如果a2b为true则为零）
+    //     - coin_b: 输出的代币B（如果a2b为false则为零）
+    //     - receipt: 闪电贷收据（热土豆，必须立即处理）
     public fun flash_swap(
         pool_address: address,
         swap_from: address,
@@ -1498,15 +1483,15 @@ module eden_clmm::pool {
         )
     }
 
-   // 偿还闪电交换的代币
-   //
-   // 这是闪电交换的第二步，用户必须支付相应的代币来完成交换。
-   // 该函数会验证支付金额的正确性，分配合作伙伴费用，并将代币存入池子。
-   //
-   // 参数：
-   //     - coin_a: 代币A（如果是A换B则包含支付金额，否则为零）
-   //     - coin_b: 代币B（如果是B换A则包含支付金额，否则为零）
-   //     - receipt: 闪电交换收据（包含支付信息）
+    // 偿还闪电交换的代币
+    //
+    // 这是闪电交换的第二步，用户必须支付相应的代币来完成交换。
+    // 该函数会验证支付金额的正确性，分配合作伙伴费用，并将代币存入池子。
+    //
+    // 参数：
+    //     - coin_a: 代币A（如果是A换B则包含支付金额，否则为零）
+    //     - coin_b: 代币B（如果是B换A则包含支付金额，否则为零）
+    //     - receipt: 闪电交换收据（包含支付信息）
     public fun repay_flash_swap(
         asset_a: FungibleAsset,
         asset_b: FungibleAsset,
@@ -1544,17 +1529,17 @@ module eden_clmm::pool {
         }
     }
 
-   // 收集协议费用
-   //
-   // 只有协议费用领取权限的账户可以收集累积的协议费用。
-   // 协议费用来自于每笔交易费用中分配给协议的部分。
-   //
-   // 参数：
-   //     - account: 有协议费用领取权限的账户
-   //     - pool_address: 池子地址
-   //
-   // 返回：
-   //     - (FungibleAsset,FungibleAsset): 协议费用代币
+    // 收集协议费用
+    //
+    // 只有协议费用领取权限的账户可以收集累积的协议费用。
+    // 协议费用来自于每笔交易费用中分配给协议的部分。
+    //
+    // 参数：
+    //     - account: 有协议费用领取权限的账户
+    //     - pool_address: 池子地址
+    //
+    // 返回：
+    //     - (FungibleAsset,FungibleAsset): 协议费用代币
     public fun collect_protocol_fee(
         account: &signer,
         pool_address: address
@@ -1586,17 +1571,17 @@ module eden_clmm::pool {
         (asset_a, asset_b)
     }
 
-   // 初始化奖励器
-   //
-   // 为池子创建一个新的流动性挖矿奖励器，用于激励用户提供流动性。
-   // 每个池子最多支持3个奖励器，每个奖励器对应一种奖励代币。
-   // 只有协议管理员可以初始化奖励器。
-   //
-   // 参数：
-   //     - account: 协议权限签名者
-   //     - pool_address: 池子地址
-   //     - authority: 奖励器管理权限地址
-   //     - index: 奖励器索引（必须按顺序添加）
+    // 初始化奖励器
+    //
+    // 为池子创建一个新的流动性挖矿奖励器，用于激励用户提供流动性。
+    // 每个池子最多支持3个奖励器，每个奖励器对应一种奖励代币。
+    // 只有协议管理员可以初始化奖励器。
+    //
+    // 参数：
+    //     - account: 协议权限签名者
+    //     - pool_address: 池子地址
+    //     - authority: 奖励器管理权限地址
+    //     - index: 奖励器索引（必须按顺序添加）
     public fun initialize_rewarder(
         account: &signer,
         pool_address: address,
@@ -1624,17 +1609,17 @@ module eden_clmm::pool {
         rewarder_infos.push_back(rewarder);
     }
 
-   // 更新奖励器发放速率
-   //
-   // 设置或更新奖励器的代币发放速率，启动流动性挖矿。
-   // 只有奖励器的管理权限地址可以调用此函数。
-   // 需要确保池子有足够的奖励代币余额来支持至少一天的发放。
-   //
-   // 参数：
-   //     - account: 奖励器管理权限账户
-   //     - pool_address: 池子地址
-   //     - index: 奖励器索引
-   //     - emissions_per_second: 每秒发放的代币数量（X64格式）
+    // 更新奖励器发放速率
+    //
+    // 设置或更新奖励器的代币发放速率，启动流动性挖矿。
+    // 只有奖励器的管理权限地址可以调用此函数。
+    // 需要确保池子有足够的奖励代币余额来支持至少一天的发放。
+    //
+    // 参数：
+    //     - account: 奖励器管理权限账户
+    //     - pool_address: 池子地址
+    //     - index: 奖励器索引
+    //     - emissions_per_second: 每秒发放的代币数量（X64格式）
     public fun update_emission(
         account: &signer,
         pool_address: address,
@@ -1674,17 +1659,17 @@ module eden_clmm::pool {
         })
     }
 
-   // 转移奖励器权限
-   //
-   // 将奖励器的管理权限转移给新的地址。
-   // 这是一个两步流程：先转移，然后新地址需要接受。
-   // 只有当前的奖励器权限地址可以发起转移。
-   //
-   // 参数：
-   //     - account: 当前奖励器权限账户
-   //     - pool_address: 池子地址
-   //     - index: 奖励器索引
-   //     - new_authority: 新的权限地址
+    // 转移奖励器权限
+    //
+    // 将奖励器的管理权限转移给新的地址。
+    // 这是一个两步流程：先转移，然后新地址需要接受。
+    // 只有当前的奖励器权限地址可以发起转移。
+    //
+    // 参数：
+    //     - account: 当前奖励器权限账户
+    //     - pool_address: 池子地址
+    //     - index: 奖励器索引
+    //     - new_authority: 新的权限地址
     public fun transfer_rewarder_authority(
         account: &signer,
         pool_address: address,
@@ -1711,15 +1696,15 @@ module eden_clmm::pool {
         })
     }
 
-   // 接受奖励器权限
-   //
-   // 新的权限地址接受奖励器管理权限，完成权限转移流程。
-   // 只有被指定为待接受权限的地址才能调用此函数。
-   //
-   // 参数：
-   //     - account: 新的权限账户
-   //     - pool_address: 池子地址
-   //     - index: 奖励器索引
+    // 接受奖励器权限
+    //
+    // 新的权限地址接受奖励器管理权限，完成权限转移流程。
+    // 只有被指定为待接受权限的地址才能调用此函数。
+    //
+    // 参数：
+    //     - account: 新的权限账户
+    //     - pool_address: 池子地址
+    //     - index: 奖励器索引
     public fun accept_rewarder_authority(
         account: &signer,
         pool_address: address,
@@ -1746,15 +1731,15 @@ module eden_clmm::pool {
         })
     }
 
-   // 检查位置所有权
-   //
-   // 验证账户是否拥有指定位置的NFT，确保只有位置所有者才能操作该位置。
-   // 通过检查用户是否持有对应的位置NFT来验证所有权。
-   //
-   // 参数：
-   //     - account: 待验证的账户
-   //     - pool_address: 池子账户地址
-   //     - position_index: 位置索引
+    // 检查位置所有权
+    //
+    // 验证账户是否拥有指定位置的NFT，确保只有位置所有者才能操作该位置。
+    // 通过检查用户是否持有对应的位置NFT来验证所有权。
+    //
+    // 参数：
+    //     - account: 待验证的账户
+    //     - pool_address: 池子账户地址
+    //     - position_index: 位置索引
     public fun check_position_authority(
         account: &signer,
         pool_address: address,
@@ -1781,19 +1766,27 @@ module eden_clmm::pool {
     // 查看和获取函数
     // ============================================================================================================
 
-   // 获取tick数据
-   //
-   // 分页获取池子中的tick数据，用于前端展示和分析。
-   // 从指定索引和偏移量开始，获取指定数量的tick数据。
-   //
-   // 参数：
-   //     - pool_address: 池子地址
-   //     - index: 起始tick索引组
-   //     - offset: 组内偏移量
-   //     - limit: 获取数量限制
-   //
-   // 返回：
-   //     - (下一个索引组, 下一个偏移量, tick数据向量)
+    public fun get_pool_tokens(pool_address: address): (Object<Metadata>, Object<Metadata>) acquires Pool {
+        let pool_info = borrow_global_mut<Pool>(pool_address);
+        (
+            fungible_asset::store_metadata(pool_info.store_a),
+            fungible_asset::store_metadata(pool_info.store_b),
+        )
+    }
+
+    // 获取tick数据
+    //
+    // 分页获取池子中的tick数据，用于前端展示和分析。
+    // 从指定索引和偏移量开始，获取指定数量的tick数据。
+    //
+    // 参数：
+    //     - pool_address: 池子地址
+    //     - index: 起始tick索引组
+    //     - offset: 组内偏移量
+    //     - limit: 获取数量限制
+    //
+    // 返回：
+    //     - (下一个索引组, 下一个偏移量, tick数据向量)
     public fun fetch_ticks(
         pool_address: address, index: u64, offset: u64, limit: u64
     ): (u64, u64, vector<Tick>) acquires Pool {
@@ -1829,18 +1822,18 @@ module eden_clmm::pool {
         (search_indexes_index, offset, ticks)
     }
 
-   // 获取位置数据
-   //
-   // 分页获取池子中的位置数据，用于前端展示用户的流动性位置。
-   // 从指定索引开始，获取指定数量的位置数据。
-   //
-   // 参数：
-   //     - pool_address: 池子地址
-   //     - index: 起始位置索引
-   //     - limit: 获取数量限制
-   //
-   // 返回：
-   //     - (下一个索引, 位置数据向量)
+    // 获取位置数据
+    //
+    // 分页获取池子中的位置数据，用于前端展示用户的流动性位置。
+    // 从指定索引开始，获取指定数量的位置数据。
+    //
+    // 参数：
+    //     - pool_address: 池子地址
+    //     - index: 起始位置索引
+    //     - limit: 获取数量限制
+    //
+    // 返回：
+    //     - (下一个索引, 位置数据向量)
     public fun fetch_positions(
         pool_address: address, index: u64, limit: u64
     ): (u64, vector<Position>) acquires Pool {
@@ -1858,30 +1851,30 @@ module eden_clmm::pool {
         (index, positions)
     }
 
-   // 计算交换结果
-   //
-   // 预先计算交换操作的详细结果，不实际执行交换。
-   // 用于前端展示预期的交换结果、价格影响和滑点。
-   // 模拟整个交换过程，包括跨tick的流动性变化。
-   //
-   // 参数：
-   //     - pool_address: 池子地址
-   //     - a2b: 交换方向（true: A换B, false: B换A）
-   //     - by_amount_in: 按输入量还是输出量计算
-   //     - amount: 输入量或输出量
-   //
-   // 返回：
-   //     - swap_result: 详细的交换结果，包含每步的计算过程
-   // 计算交换结果（不执行实际交换，仅计算）
-   // 用于预估交换的输入输出量和费用
-   //
-   // 参数:
-   //     pool_address: 池子地址
-   //     a2b: 是否从A币交换到B币
-   //     by_amount_in: 是否按输入量计算（true为按输入量，false为按输出量）
-   //     amount: 交换数量
-   // 返回:
-   //     CalculatedSwapResult: 计算出的交换结果
+    // 计算交换结果
+    //
+    // 预先计算交换操作的详细结果，不实际执行交换。
+    // 用于前端展示预期的交换结果、价格影响和滑点。
+    // 模拟整个交换过程，包括跨tick的流动性变化。
+    //
+    // 参数：
+    //     - pool_address: 池子地址
+    //     - a2b: 交换方向（true: A换B, false: B换A）
+    //     - by_amount_in: 按输入量还是输出量计算
+    //     - amount: 输入量或输出量
+    //
+    // 返回：
+    //     - swap_result: 详细的交换结果，包含每步的计算过程
+    // 计算交换结果（不执行实际交换，仅计算）
+    // 用于预估交换的输入输出量和费用
+    //
+    // 参数:
+    //     pool_address: 池子地址
+    //     a2b: 是否从A币交换到B币
+    //     by_amount_in: 是否按输入量计算（true为按输入量，false为按输出量）
+    //     amount: 交换数量
+    // 返回:
+    //     CalculatedSwapResult: 计算出的交换结果
     public fun calculate_swap_result(
         pool_address: address,
         a2b: bool,
@@ -2008,34 +2001,34 @@ module eden_clmm::pool {
         result
     }
 
-   // 获取闪电交换的支付金额
-   //
-   // 参数:
-   //     receipt: 闪电交换收据
-   // 返回:
-   //     u64: 需要支付的金额
+    // 获取闪电交换的支付金额
+    //
+    // 参数:
+    //     receipt: 闪电交换收据
+    // 返回:
+    //     u64: 需要支付的金额
     public fun swap_pay_amount(receipt: &FlashSwapReceipt): u64 {
         receipt.pay_amount
     }
 
-   // 获取添加流动性的支付金额
-   //
-   // 参数:
-   //     receipt: 添加流动性收据
-   // 返回:
-   //     (u64, u64): (A币数量, B币数量)
+    // 获取添加流动性的支付金额
+    //
+    // 参数:
+    //     receipt: 添加流动性收据
+    // 返回:
+    //     (u64, u64): (A币数量, B币数量)
     public fun add_liqudity_pay_amount(
         receipt: &AddLiquidityReceipt
     ): (u64, u64) {
         (receipt.amount_a, receipt.amount_b)
     }
 
-   // 获取池子的tick间距
-   //
-   // 参数:
-   //     pool: 池子地址
-   // 返回:
-   //     u64: tick间距
+    // 获取池子的tick间距
+    //
+    // 参数:
+    //     pool: 池子地址
+    // 返回:
+    //     u64: tick间距
     public fun get_tick_spacing(pool: address): u64 acquires Pool {
         if (!exists<Pool>(pool)) {
             abort EPOOL_NOT_EXISTS  // 池子不存在
@@ -2044,12 +2037,12 @@ module eden_clmm::pool {
         pool_info.tick_spacing
     }
 
-   // 获取池子的当前流动性
-   //
-   // 参数:
-   //     pool: 池子地址
-   // 返回:
-   //     u128: 当前流动性
+    // 获取池子的当前流动性
+    //
+    // 参数:
+    //     pool: 池子地址
+    // 返回:
+    //     u128: 当前流动性
     public fun get_pool_liquidity(pool: address): u128 acquires Pool {
         if (!exists<Pool>(pool)) {
             abort EPOOL_NOT_EXISTS  // 池子不存在
@@ -2058,24 +2051,24 @@ module eden_clmm::pool {
         pool_info.liquidity
     }
 
-   // 获取池子的索引
-   //
-   // 参数:
-   //     pool: 池子地址
-   // 返回:
-   //     u64: 池子索引
+    // 获取池子的索引
+    //
+    // 参数:
+    //     pool: 池子地址
+    // 返回:
+    //     u64: 池子索引
     public fun get_pool_index(pool: address): u64 acquires Pool {
         let pool_info = borrow_global<Pool>(pool);
         pool_info.index
     }
 
-   // 获取位置信息
-   //
-   // 参数:
-   //     pool_address: 池子地址
-   //     pos_index: 位置索引
-   // 返回:
-   //     Position: 位置信息
+    // 获取位置信息
+    //
+    // 参数:
+    //     pool_address: 池子地址
+    //     pos_index: 位置索引
+    // 返回:
+    //     Position: 位置信息
     public fun get_position(
         pool_address: address,
         pos_index: u64
@@ -2087,13 +2080,13 @@ module eden_clmm::pool {
         *pool_info.positions.borrow(pos_index)
     }
 
-   // 通过池子信息获取位置的tick范围
-   //
-   // 参数:
-   //     pool_info: 池子信息引用
-   //     position_index: 位置索引
-   // 返回:
-   //     (I64, I64): (下界tick, 上界tick)
+    // 通过池子信息获取位置的tick范围
+    //
+    // 参数:
+    //     pool_info: 池子信息引用
+    //     position_index: 位置索引
+    // 返回:
+    //     (I64, I64): (下界tick, 上界tick)
     public fun get_position_tick_range_by_pool(
         pool_info: &Pool,
         position_index: u64
@@ -2105,13 +2098,13 @@ module eden_clmm::pool {
         (position.tick_lower_index, position.tick_upper_index)
     }
 
-   // 获取位置的tick范围
-   //
-   // 参数:
-   //     pool_address: 池子地址
-   //     position_index: 位置索引
-   // 返回:
-   //     (I64, I64): (下界tick, 上界tick)
+    // 获取位置的tick范围
+    //
+    // 参数:
+    //     pool_address: 池子地址
+    //     position_index: 位置索引
+    // 返回:
+    //     (I64, I64): (下界tick, 上界tick)
     public fun get_position_tick_range(
         pool_address: address,
         position_index: u64
@@ -2124,12 +2117,12 @@ module eden_clmm::pool {
         (position.tick_lower_index, position.tick_upper_index)
     }
 
-   // 获取奖励器数量
-   //
-   // 参数:
-   //     pool_address: 池子地址
-   // 返回:
-   //     u8: 奖励器数量
+    // 获取奖励器数量
+    //
+    // 参数:
+    //     pool_address: 池子地址
+    // 返回:
+    //     u8: 奖励器数量
     public fun get_rewarder_len(pool_address: address): u8 acquires Pool {
         let pool_info = borrow_global<Pool>(pool_address);
         let len = pool_info.rewarder_infos.length();
@@ -2139,8 +2132,8 @@ module eden_clmm::pool {
     // 私有函数
     //============================================================================================================
 
-   // 检查池子状态
-   // 验证协议状态和池子是否暂停
+    // 检查池子状态
+    // 验证协议状态和池子是否暂停
     fun assert_status(pool: &Pool) {
         config::assert_protocol_status();  // 检查协议状态
         if (pool.is_pause) {
@@ -2148,13 +2141,13 @@ module eden_clmm::pool {
         };
     }
 
-   // 获取tick在索引数组中的位置
-   //
-   // 参数:
-   //     tick: tick值
-   //     tick_spacing: tick间距
-   // 返回:
-   //     u64: tick索引数组的索引
+    // 获取tick在索引数组中的位置
+    //
+    // 参数:
+    //     tick: tick值
+    //     tick_spacing: tick间距
+    // 返回:
+    //     u64: tick索引数组的索引
     fun tick_indexes_index(tick: I64, tick_spacing: u64): u64 {
         let num = i64::sub(tick, tick_min(tick_spacing));  // 计算相对于最小tick的偏移
         if (i64::is_neg(num)) {
@@ -2164,14 +2157,14 @@ module eden_clmm::pool {
         i64::as_u64(num) / denom  // 计算索引数组位置
     }
 
-   // 获取tick在存储中的位置
-   // 返回tick索引数组的索引和在该数组中的偏移量
-   //
-   // 参数:
-   //     tick: tick值
-   //     tick_spacing: tick间距
-   // 返回:
-   //     (u64, u64): (索引数组索引, 在索引数组中的偏移量)
+    // 获取tick在存储中的位置
+    // 返回tick索引数组的索引和在该数组中的偏移量
+    //
+    // 参数:
+    //     tick: tick值
+    //     tick_spacing: tick间距
+    // 返回:
+    //     (u64, u64): (索引数组索引, 在索引数组中的偏移量)
     fun tick_position(tick: I64, tick_spacing: u64): (u64, u64) {
         let index = tick_indexes_index(tick, tick_spacing);  // 获取索引数组位置
         let u_tick = i64::as_u64(i64::add(tick, tick_max(tick_spacing)));  // 转换为无符号并加上最大tick
@@ -2179,63 +2172,63 @@ module eden_clmm::pool {
         (index, offset)
     }
 
-   // 获取tick在索引数组中的偏移量
-   //
-   // 参数:
-   //     indexes_index: 索引数组的索引
-   //     tick_spacing: tick间距
-   //     tick: tick值
-   // 返回:
-   //     u64: tick在索引数组中的偏移量
+    // 获取tick在索引数组中的偏移量
+    //
+    // 参数:
+    //     indexes_index: 索引数组的索引
+    //     tick_spacing: tick间距
+    //     tick: tick值
+    // 返回:
+    //     u64: tick在索引数组中的偏移量
     fun tick_offset(indexes_index: u64, tick_spacing: u64, tick: I64): u64 {
         let u_tick = i64::as_u64(i64::add(tick, tick_max(tick_spacing)));  // 转换为无符号并加上最大tick
         (u_tick - (indexes_index * tick_spacing * TICK_INDEXES_LENGTH)) / tick_spacing  // 计算偏移量
     }
 
-   // 获取最大tick索引数组索引
-   //
-   // 参数:
-   //     tick_spacing: tick间距
-   // 返回:
-   //     u64: 最大索引数组索引
+    // 获取最大tick索引数组索引
+    //
+    // 参数:
+    //     tick_spacing: tick间距
+    // 返回:
+    //     u64: 最大索引数组索引
     fun tick_indexes_max(tick_spacing: u64): u64 {
         ((tick_math::tick_bound() * 2) / (tick_spacing * TICK_INDEXES_LENGTH)) + 1  // 计算最大索引
         //let max_tick = tick_max(tick_spacing);
         //tick_indexes_index(max_tick, tick_spacing)
     }
 
-   // 获取指定tick间距下的最小tick边界
-   //
-   // 参数:
-   //     tick_spacing: tick间距
-   // 返回:
-   //     I64: 最小tick边界
+    // 获取指定tick间距下的最小tick边界
+    //
+    // 参数:
+    //     tick_spacing: tick间距
+    // 返回:
+    //     I64: 最小tick边界
     fun tick_min(tick_spacing: u64): I64 {
         let min_tick = tick_math::min_tick();  // 获取理论最小tick
         let mod = i64::mod(min_tick, i64::from(tick_spacing));  // 计算余数
         i64::sub(min_tick, mod)  // 调整到tick间距的倍数
     }
 
-   // 获取指定tick间距下的最大tick边界
-   //
-   // 参数:
-   //     tick_spacing: tick间距
-   // 返回:
-   //     I64: 最大tick边界
+    // 获取指定tick间距下的最大tick边界
+    //
+    // 参数:
+    //     tick_spacing: tick间距
+    // 返回:
+    //     I64: 最大tick边界
     fun tick_max(tick_spacing: u64): I64 {
         let max_tick = tick_math::max_tick();  // 获取理论最大tick
         let mod = i64::mod(max_tick, i64::from(tick_spacing));  // 计算余数
         i64::sub(max_tick, mod)  // 调整到tick间距的倍数
     }
 
-   // 获取指定tick范围内的费用增长率
-   //
-   // 参数:
-   //     pool: 池子引用
-   //     tick_lower_index: 下界tick索引
-   //     tick_upper_index: 上界tick索引
-   // 返回:
-   //     (u128, u128): (A币费用增长率, B币费用增长率)
+    // 获取指定tick范围内的费用增长率
+    //
+    // 参数:
+    //     pool: 池子引用
+    //     tick_lower_index: 下界tick索引
+    //     tick_upper_index: 上界tick索引
+    // 返回:
+    //     (u128, u128): (A币费用增长率, B币费用增长率)
     fun get_fee_in_tick_range(
         pool: &Pool,
         tick_lower_index: I64,
@@ -2287,17 +2280,17 @@ module eden_clmm::pool {
         )
     }
 
-   // 在池子中添加流动性（内部函数）
-   //
-   // 参数:
-   //     pool_address: 池子地址
-   //     position_index: 位置索引
-   //     by_amount: 是否按数量计算流动性
-   //     liquidity: 流动性数量
-   //     amount: 代币数量
-   //     fix_amount_a: 是否固定A币数量
-   // 返回:
-   //     AddLiquidityReceipt: 添加流动性收据
+    // 在池子中添加流动性（内部函数）
+    //
+    // 参数:
+    //     pool_address: 池子地址
+    //     position_index: 位置索引
+    //     by_amount: 是否按数量计算流动性
+    //     liquidity: 流动性数量
+    //     amount: 代币数量
+    //     fix_amount_a: 是否固定A币数量
+    // 返回:
+    //     AddLiquidityReceipt: 添加流动性收据
     fun add_liquidity_internal(
         pool_address: address,
         position_index: u64,
@@ -2314,15 +2307,13 @@ module eden_clmm::pool {
         update_rewarder(pool);
 
         // 3. 更新位置的费用和奖励
-        let (tick_lower, tick_upper) = get_position_tick_range_by_pool(
-            pool,
-            position_index
-        );
-        let (fee_growth_inside_a, fee_growth_inside_b) = get_fee_in_tick_range(
-            pool,
-            tick_lower,
-            tick_upper
-        );
+        let (tick_lower, tick_upper) = get_position_tick_range_by_pool(pool, position_index);
+        let (fee_growth_inside_a, fee_growth_inside_b) =
+            get_fee_in_tick_range(
+                pool,
+                tick_lower,
+                tick_upper
+            );
         let rewards_growth_inside = get_reward_in_tick_range(pool, tick_lower, tick_upper);
         let position = pool.positions.borrow_mut(position_index);
         update_position_fee_and_reward(position, fee_growth_inside_a, fee_growth_inside_b, rewards_growth_inside);
@@ -2386,18 +2377,18 @@ module eden_clmm::pool {
         }
     }
 
-   // 在池子中执行交换（内部函数）
-   //
-   // 参数:
-   //     pool: 池子可变引用
-   //     a2b: 是否从A币交换到B币
-   //     by_amount_in: 是否按输入量计算
-   //     sqrt_price_limit: sqrt价格限制
-   //     amount: 交换数量
-   //     protocol_fee_rate: 协议费用率
-   //     ref_fee_rate: 推荐费用率
-   // 返回:
-   //     SwapResult: 交换结果
+    // 在池子中执行交换（内部函数）
+    //
+    // 参数:
+    //     pool: 池子可变引用
+    //     a2b: 是否从A币交换到B币
+    //     by_amount_in: 是否按输入量计算
+    //     sqrt_price_limit: sqrt价格限制
+    //     amount: 交换数量
+    //     protocol_fee_rate: 协议费用率
+    //     ref_fee_rate: 推荐费用率
+    // 返回:
+    //     SwapResult: 交换结果
     fun swap_in_pool(
         pool: &mut Pool,
         a2b: bool,
@@ -2483,11 +2474,9 @@ module eden_clmm::pool {
         swap_result  // 返回交换结果
     }
 
-   // 更新奖励器
-   // 在交换、添加流动性、移除流动性、收集奖励和更新发放速率时需要更新奖励器
-    fun update_rewarder(
-        pool: &mut Pool,
-    ) {
+    // 更新奖励器
+    // 在交换、添加流动性、移除流动性、收集奖励和更新发放速率时需要更新奖励器
+    fun update_rewarder(pool: &mut Pool, ) {
         let current_time = timestamp::now_seconds();  // 当前时间
         let last_time = pool.rewarder_last_updated_time;  // 上次更新时间
         pool.rewarder_last_updated_time = current_time;  // 更新最后更新时间
@@ -2513,13 +2502,13 @@ module eden_clmm::pool {
         }
     }
 
-   // 更新交换结果
-   //
-   // 参数:
-   //     result: 交换结果引用
-   //     amount_in: 输入量
-   //     amount_out: 输出量
-   //     fee_amount: 费用
+    // 更新交换结果
+    //
+    // 参数:
+    //     result: 交换结果引用
+    //     amount_in: 输入量
+    //     amount_out: 输出量
+    //     fee_amount: 费用
     fun update_swap_result(result: &mut SwapResult, amount_in: u64, amount_out: u64, fee_amount: u64) {
         // 累加输入量并检查溢出
         let (result_amount_in, overflowing) = math_u64::overflowing_add(result.amount_in, amount_in);
@@ -2542,16 +2531,16 @@ module eden_clmm::pool {
         result.fee_amount = result_fee_amount;
     }
 
-   // 更新池子的协议费用和全局费用增长率
-   //
-   // 参数:
-   //     pool: 池子可变引用
-   //     fee_amount: 总费用
-   //     ref_rate: 推荐费用率
-   //     protocol_fee_rate: 协议费用率
-   //     a2b: 是否从A币交换到B币
-   // 返回:
-   //     u64: 推荐费用
+    // 更新池子的协议费用和全局费用增长率
+    //
+    // 参数:
+    //     pool: 池子可变引用
+    //     fee_amount: 总费用
+    //     ref_rate: 推荐费用率
+    //     protocol_fee_rate: 协议费用率
+    //     a2b: 是否从A币交换到B币
+    // 返回:
+    //     u64: 推荐费用
     fun update_pool_fee(
         pool: &mut Pool,
         fee_amount: u64,
@@ -2593,12 +2582,12 @@ module eden_clmm::pool {
         ref_fee  // 返回推荐费用
     }
 
-   // 跨越tick并更新流动性
-   //
-   // 参数:
-   //     pool: 池子可变引用
-   //     tick: tick索引
-   //     a2b: 是否从A币交换到B币
+    // 跨越tick并更新流动性
+    //
+    // 参数:
+    //     pool: 池子可变引用
+    //     tick: tick索引
+    //     a2b: 是否从A币交换到B币
     fun cross_tick_and_update_liquidity(
         pool: &mut Pool,
         tick: I64,
@@ -2652,13 +2641,13 @@ module eden_clmm::pool {
         }
     }
 
-   // 检查并减去剩余数量
-   //
-   // 参数:
-   //     remainer_amount: 剩余数量
-   //     amount: 要减去的数量
-   // 返回:
-   //     u64: 减去后的剩余数量
+    // 检查并减去剩余数量
+    //
+    // 参数:
+    //     remainer_amount: 剩余数量
+    //     amount: 要减去的数量
+    // 返回:
+    //     u64: 减去后的剩余数量
     fun check_sub_remainer_amount(remainer_amount: u64, amount: u64): u64 {
         let (r_amount, overflowing) = math_u64::overflowing_sub(remainer_amount, amount);
         if (overflowing) {
@@ -2667,16 +2656,16 @@ module eden_clmm::pool {
         r_amount
     }
 
-   // 获取交换的下一个tick
-   // 在交换过程中寻找下一个有流动性的tick
-   //
-   // 参数:
-   //     pool: 池子引用
-   //     tick_idx: 当前tick索引
-   //     a2b: 是否从A币交换到B币
-   //     max_tick: 最大tick值
-   // 返回:
-   //     Option<Tick>: 下一个tick，如果没有则返回None
+    // 获取交换的下一个tick
+    // 在交换过程中寻找下一个有流动性的tick
+    //
+    // 参数:
+    //     pool: 池子引用
+    //     tick_idx: 当前tick索引
+    //     a2b: 是否从A币交换到B币
+    //     max_tick: 最大tick值
+    // 返回:
+    //     Option<Tick>: 下一个tick，如果没有则返回None
     fun get_next_tick_for_swap(
         pool: &Pool,
         tick_idx: I64,
@@ -2733,15 +2722,15 @@ module eden_clmm::pool {
         option::none<Tick>()  // 未找到下一个tick
     }
 
-   // 根据流动性变化更新tick
-   // 添加或移除流动性时更新tick的状态
-   //
-   // 参数:
-   //     pool: 池子可变引用
-   //     tick_idx: tick索引
-   //     delta_liquidity: 流动性变化量
-   //     is_increase: 是否增加流动性
-   //     is_upper_tick: 是否为上界tick
+    // 根据流动性变化更新tick
+    // 添加或移除流动性时更新tick的状态
+    //
+    // 参数:
+    //     pool: 池子可变引用
+    //     tick_idx: tick索引
+    //     delta_liquidity: 流动性变化量
+    //     is_increase: 是否增加流动性
+    //     is_upper_tick: 是否为上界tick
     fun upsert_tick_by_liquidity(
         pool: &mut Pool,
         tick_idx: I64,
@@ -2814,12 +2803,12 @@ module eden_clmm::pool {
         tick.rewarders_growth_outside = reward_growth_outside;
     }
 
-   // 创建默认tick结构体
-   //
-   // 参数:
-   //     tick_idx: tick索引
-   // 返回:
-   //     Tick: 默认tick结构体
+    // 创建默认tick结构体
+    //
+    // 参数:
+    //     tick_idx: tick索引
+    // 返回:
+    //     Tick: 默认tick结构体
     fun default_tick(tick_idx: I64): Tick {
         Tick {
             index: tick_idx, // tick索引
@@ -2832,13 +2821,13 @@ module eden_clmm::pool {
         }
     }
 
-   // 借用一个tick（只读）
-   //
-   // 参数:
-   //     pool: 池子引用
-   //     tick_idx: tick索引
-   // 返回:
-   //     Option<Tick>: tick的只读引用，如果不存在则返回None
+    // 借用一个tick（只读）
+    //
+    // 参数:
+    //     pool: 池子引用
+    //     tick_idx: tick索引
+    // 返回:
+    //     Option<Tick>: tick的只读引用，如果不存在则返回None
     fun borrow_tick(pool: &Pool, tick_idx: I64): Option<Tick> {
         let (index, _offset) = tick_position(tick_idx, pool.tick_spacing);  // 计算tick位置
         if (!pool.tick_indexes.contains(index)) {
@@ -2852,10 +2841,10 @@ module eden_clmm::pool {
     }
 
 
-   // 创建默认交换结果
-   //
-   // 返回:
-   //     SwapResult: 默认的交换结果结构体
+    // 创建默认交换结果
+    //
+    // 返回:
+    //     SwapResult: 默认的交换结果结构体
     fun default_swap_result(): SwapResult {
         SwapResult {
             amount_in: 0, // 输入量为0
@@ -2865,16 +2854,16 @@ module eden_clmm::pool {
         }
     }
 
-   // 借用可变tick，如果不存在则创建默认tick
-   // 主要用于测试存储
-   //
-   // 参数:
-   //     tick_indexes: tick索引数组的可变引用
-   //     ticks: tick表的可变引用
-   //     tick_spacing: tick间距
-   //     tick_idx: tick索引
-   // 返回:
-   //     &mut Tick: tick的可变引用
+    // 借用可变tick，如果不存在则创建默认tick
+    // 主要用于测试存储
+    //
+    // 参数:
+    //     tick_indexes: tick索引数组的可变引用
+    //     ticks: tick表的可变引用
+    //     tick_spacing: tick间距
+    //     tick_idx: tick索引
+    // 返回:
+    //     &mut Tick: tick的可变引用
     fun borrow_mut_tick_with_default(
         tick_indexes: &mut Table<u64, BitVector>,
         ticks: &mut Table<I64, Tick>,
@@ -2899,11 +2888,11 @@ module eden_clmm::pool {
         }
     }
 
-   // 从池子中移除tick
-   //
-   // 参数:
-   //     pool: 池子可变引用
-   //     tick_idx: 要移除的tick索引
+    // 从池子中移除tick
+    //
+    // 参数:
+    //     pool: 池子可变引用
+    //     tick_idx: 要移除的tick索引
     fun remove_tick(
         pool: &mut Pool,
         tick_idx: I64
@@ -2920,12 +2909,12 @@ module eden_clmm::pool {
         pool.ticks.remove(tick_idx);  // 从表中移除tick
     }
 
-   // 获取所有奖励器的全局增长率
-   //
-   // 参数:
-   //     rewarders: 奖励器向量
-   // 返回:
-   //     vector<u128>: 全局增长率向量
+    // 获取所有奖励器的全局增长率
+    //
+    // 参数:
+    //     rewarders: 奖励器向量
+    // 返回:
+    //     vector<u128>: 全局增长率向量
     fun rewarder_growth_globals(rewarders: vector<Rewarder>): vector<u128> {
         let res = vector[0, 0, 0];  // 初始化结果向量
         let idx = 0;
@@ -2936,14 +2925,14 @@ module eden_clmm::pool {
         res
     }
 
-   // 获取指定tick范围内的奖励增长率
-   //
-   // 参数:
-   //     pool: 池子引用
-   //     tick_lower_index: 下界tick索引
-   //     tick_upper_index: 上界tick索引
-   // 返回:
-   //     vector<u128>: 范围内的奖励增长率向量
+    // 获取指定tick范围内的奖励增长率
+    //
+    // 参数:
+    //     pool: 池子引用
+    //     tick_lower_index: 下界tick索引
+    //     tick_upper_index: 上界tick索引
+    // 返回:
+    //     vector<u128>: 范围内的奖励增长率向量
     fun get_reward_in_tick_range(
         pool: &Pool,
         tick_lower_index: I64,
@@ -2995,15 +2984,15 @@ module eden_clmm::pool {
     }
 
 
-   // 创建新的空位置
-   //
-   // 参数:
-   //     pool_address: 池子地址
-   //     tick_lower_index: 下界tick索引
-   //     tick_upper_index: 上界tick索引
-   //     index: 位置索引
-   // 返回:
-   //     Position: 新的空位置
+    // 创建新的空位置
+    //
+    // 参数:
+    //     pool_address: 池子地址
+    //     tick_lower_index: 下界tick索引
+    //     tick_upper_index: 上界tick索引
+    //     index: 位置索引
+    // 返回:
+    //     Position: 新的空位置
     fun new_empty_position(
         pool_address: address,
         tick_lower_index: I64,
@@ -3037,11 +3026,11 @@ module eden_clmm::pool {
         }
     }
 
-   // 更新位置的奖励器信息
-   //
-   // 参数:
-   //     position: 位置可变引用
-   //     rewarder_growths_inside: 内部奖励增长率向量
+    // 更新位置的奖励器信息
+    //
+    // 参数:
+    //     position: 位置可变引用
+    //     rewarder_growths_inside: 内部奖励增长率向量
     fun update_position_rewarder(position: &mut Position, rewarder_growths_inside: vector<u128>) {
         let idx = 0;
         while (idx < rewarder_growths_inside.length()) {
@@ -3062,12 +3051,12 @@ module eden_clmm::pool {
         }
     }
 
-   // 更新位置的费用信息
-   //
-   // 参数:
-   //     position: 位置可变引用
-   //     fee_growth_inside_a: A币内部费用增长率
-   //     fee_growth_inside_b: B币内部费用增长率
+    // 更新位置的费用信息
+    //
+    // 参数:
+    //     position: 位置可变引用
+    //     fee_growth_inside_a: A币内部费用增长率
+    //     fee_growth_inside_b: B币内部费用增长率
     fun update_position_fee(position: &mut Position, fee_growth_inside_a: u128, fee_growth_inside_b: u128) {
         // 计算A币费用增长率差值
         let growth_delta_a = math_u128::wrapping_sub(fee_growth_inside_a, position.fee_growth_inside_a);
@@ -3091,12 +3080,12 @@ module eden_clmm::pool {
         position.fee_growth_inside_b = fee_growth_inside_b;
     }
 
-   // 更新位置的流动性
-   //
-   // 参数:
-   //     position: 位置可变引用
-   //     delta_liquidity: 流动性变化量
-   //     is_increase: 是否增加流动性
+    // 更新位置的流动性
+    //
+    // 参数:
+    //     position: 位置可变引用
+    //     delta_liquidity: 流动性变化量
+    //     is_increase: 是否增加流动性
     fun update_position_liquidity(
         position: &mut Position,
         delta_liquidity: u128,
@@ -3117,13 +3106,13 @@ module eden_clmm::pool {
         position.liquidity = liquidity;  // 更新位置流动性
     }
 
-   // 更新位置的费用和奖励信息
-   //
-   // 参数:
-   //     position: 位置可变引用
-   //     fee_growth_inside_a: A币内部费用增长率
-   //     fee_growth_inside_b: B币内部费用增长率
-   //     rewards_growth_inside: 内部奖励增长率向量
+    // 更新位置的费用和奖励信息
+    //
+    // 参数:
+    //     position: 位置可变引用
+    //     fee_growth_inside_a: A币内部费用增长率
+    //     fee_growth_inside_b: B币内部费用增长率
+    //     rewards_growth_inside: 内部奖励增长率向量
     fun update_position_fee_and_reward(
         position: &mut Position,
         fee_growth_inside_a: u128,
