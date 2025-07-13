@@ -2245,8 +2245,10 @@ module eden_clmm::pool {
             let tick_lower = op_tick_lower.borrow::<Tick>();
             if (i64::lt(current_tick_index, tick_lower_index)) {
                 // 当前tick在下界以下，计算差值
-                (math_u128::wrapping_sub(pool.fee_growth_global_a, tick_lower.fee_growth_outside_a),
-                    math_u128::wrapping_sub(pool.fee_growth_global_b, tick_lower.fee_growth_outside_b))
+                (
+                    math_u128::wrapping_sub(pool.fee_growth_global_a, tick_lower.fee_growth_outside_a),
+                    math_u128::wrapping_sub(pool.fee_growth_global_b, tick_lower.fee_growth_outside_b)
+                )
             }else {
                 // 当前tick在下界以上，使用tick的外部增长率
                 (tick_lower.fee_growth_outside_a, tick_lower.fee_growth_outside_b)
@@ -2263,8 +2265,10 @@ module eden_clmm::pool {
                 (tick_upper.fee_growth_outside_a, tick_upper.fee_growth_outside_b)
             }else {
                 // 当前tick在上界以上，计算差值
-                (math_u128::wrapping_sub(pool.fee_growth_global_a, tick_upper.fee_growth_outside_a),
-                    math_u128::wrapping_sub(pool.fee_growth_global_b, tick_upper.fee_growth_outside_b))
+                (
+                    math_u128::wrapping_sub(pool.fee_growth_global_a, tick_upper.fee_growth_outside_a),
+                    math_u128::wrapping_sub(pool.fee_growth_global_b, tick_upper.fee_growth_outside_b)
+                )
             }
         };
         // 返回范围内的费用增长率（全局 - 下界以下 - 上界以上）
@@ -2308,12 +2312,7 @@ module eden_clmm::pool {
 
         // 3. 更新位置的费用和奖励
         let (tick_lower, tick_upper) = get_position_tick_range_by_pool(pool, position_index);
-        let (fee_growth_inside_a, fee_growth_inside_b) =
-            get_fee_in_tick_range(
-                pool,
-                tick_lower,
-                tick_upper
-            );
+        let (fee_growth_inside_a, fee_growth_inside_b) = get_fee_in_tick_range(pool, tick_lower, tick_upper);
         let rewards_growth_inside = get_reward_in_tick_range(pool, tick_lower, tick_upper);
         let position = pool.positions.borrow_mut(position_index);
         update_position_fee_and_reward(position, fee_growth_inside_a, fee_growth_inside_b, rewards_growth_inside);
@@ -2347,14 +2346,12 @@ module eden_clmm::pool {
         upsert_tick_by_liquidity(pool, tick_lower, increase_liquidity, true, false);  // 更新下界tick
         upsert_tick_by_liquidity(pool, tick_upper, increase_liquidity, true, true);   // 更新上界tick
         // 如果当前tick在位置范围内，更新池子流动性
-        let (after_liquidity, is_overflow) = if (i64::gte(pool.current_tick_index, tick_lower) && i64::lt(
-            pool.current_tick_index,
-            tick_upper
-        )) {
-            math_u128::overflowing_add(pool.liquidity, increase_liquidity)
-        } else {
-            (pool.liquidity, false)
-        };
+        let (after_liquidity, is_overflow) =
+            if (i64::gte(pool.current_tick_index, tick_lower) && i64::lt(pool.current_tick_index, tick_upper)) {
+                math_u128::overflowing_add(pool.liquidity, increase_liquidity)
+            } else {
+                (pool.liquidity, false)
+            };
         assert!(!is_overflow, ELIQUIDITY_OVERFLOW);  // 检查流动性溢出
         pool.liquidity = after_liquidity;
 

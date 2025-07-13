@@ -177,8 +177,7 @@ module eden_clmm::clmm_math {
             return sqrt_price
         };
         // 计算新的sqrt价格
-        let (numberator, overflowing) =
-            math_u256::checked_shlw(full_math_u128::full_mul_v2(sqrt_price, liquidity));
+        let (numberator, overflowing) = math_u256::checked_shlw(full_math_u128::full_mul_v2(sqrt_price, liquidity));
         if (overflowing) {
             abort EMULTIPLICATION_OVERFLOW
         };
@@ -404,12 +403,7 @@ module eden_clmm::clmm_math {
             if (max_amount_in > (amount_remain as u256)) {
                 amount_in = amount_remain;
                 fee_amount = amount - amount_remain;
-                next_sqrt_price = get_next_sqrt_price_from_input(
-                    current_sqrt_price,
-                    liquidity,
-                    amount_remain,
-                    a2b
-                );
+                next_sqrt_price = get_next_sqrt_price_from_input(current_sqrt_price, liquidity, amount_remain, a2b);
             } else {
                 // 这里不会溢出，因为max_amount_in < amount_remain且amount_remain是u64类型
                 amount_in = (max_amount_in as u64);
