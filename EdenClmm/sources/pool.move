@@ -35,7 +35,7 @@ module eden_clmm::pool {
     use eden_clmm::tick_math;                     // tick和价格转换数学库
     use eden_clmm::clmm_math;                     // 集中流动性数学计算
     use eden_clmm::fee_tier;                      // 费用等级管理
-    use eden_clmm::tick_math::{min_sqrt_price, max_sqrt_price, is_valid_index}; // tick数学函数
+    use eden_clmm::tick_math::{min_fifrt_price, max_fifrt_price, is_valid_index}; // tick数学函数
     use eden_clmm::position_nft;                  // 位置NFT管理
 
     friend eden_clmm::factory;                    // 友元模块：工厂合约可以调用本模块的内部函数
@@ -109,7 +109,7 @@ module eden_clmm::pool {
     // 交换数量不正确
     const EINVALID_PARTNER: u64 = 21;
     // 无效的合作伙伴
-    const EWRONG_SQRT_PRICE_LIMIT: u64 = 22;
+    const EWRONG_FIFRT_PRICE_LIMIT: u64 = 22;
     // 错误的价格平方根限制
     const EINVALID_REWARD_INDEX: u64 = 23;
     // 无效的奖励索引
@@ -141,7 +141,7 @@ module eden_clmm::pool {
     // 无效的流动性变化量
     const ESAME_COIN_TYPE: u64 = 37;
     // 相同的代币类型
-    const EINVALID_SQRT_PRICE: u64 = 38;
+    const EINVALID_FIFRT_PRICE: u64 = 38;
     // 无效的价格平方根
     const EFUNC_DISABLED: u64 = 39;
     // 功能已禁用
@@ -190,7 +190,7 @@ module eden_clmm::pool {
 
         // 当前价格的平方根（Q64.64格式）
         // 使用平方根价格可以避免精度损失和溢出问题
-        current_sqrt_price: u128,
+        current_fifrt_price: u128,
 
         // 当前tick索引
         // tick索引决定了当前价格，每个tick代表一个价格点
@@ -258,7 +258,7 @@ module eden_clmm::pool {
 
         // 该tick对应的价格平方根
         // 用于快速计算价格相关的数学运算
-        sqrt_price: u128,
+        fifrt_price: u128,
 
         // 流动性净变化量（有符号）
         // 正值表示价格上升时流动性增加，负值表示流动性减少
@@ -437,7 +437,7 @@ module eden_clmm::pool {
         fee_rate: u64,
 
         // 交换后的价格平方根
-        after_sqrt_price: u128,
+        after_fifrt_price: u128,
 
         // 是否超出了价格限制
         is_exceed: bool,
@@ -451,10 +451,10 @@ module eden_clmm::pool {
     // 记录交换过程中每一步的详细信息，用于调试和审计。
     struct SwapStepResult has copy, drop, store {
         // 当前步骤开始时的价格平方根
-        current_sqrt_price: u128,
+        current_fifrt_price: u128,
 
         // 目标价格平方根
-        target_sqrt_price: u128,
+        target_fifrt_price: u128,
 
         // 当前步骤的流动性
         current_liquidity: u128,
@@ -721,7 +721,7 @@ module eden_clmm::pool {
     // 参数：
     //     - account: 池子资源账户（用于存储池子数据）
     //     - tick_spacing: tick间距，决定价格精度和gas消耗
-    //     - init_sqrt_price: 初始价格的平方根
+    //     - init_fifrt_price: 初始价格的平方根
     //     - index: 池子索引，用于标识不同的池子
     //     - uri: 位置NFT集合的URI
     //     - signer_cap: 池子资源账户的签名能力
@@ -734,7 +734,7 @@ module eden_clmm::pool {
         token_a: Object<Metadata>,
         token_b: Object<Metadata>,
         tick_spacing: u64,
-        init_sqrt_price: u128,
+        init_fifrt_price: u128,
         index: u64,
         uri: String,
         signer_cap: account::SignerCapability,
@@ -765,8 +765,8 @@ module eden_clmm::pool {
             tick_spacing,
             fee_rate,
             liquidity: 0,
-            current_sqrt_price: init_sqrt_price,
-            current_tick_index: tick_math::get_tick_at_sqrt_price(init_sqrt_price),
+            current_fifrt_price: init_fifrt_price,
+            current_tick_index: tick_math::get_tick_at_fifrt_price(init_fifrt_price),
             fee_growth_global_a: 0,
             fee_growth_global_b: 0,
             fee_protocol_coin_a: 0,
@@ -818,15 +818,15 @@ module eden_clmm::pool {
 
         // 确保新价格在有效范围内
         assert!(
-            new_initialize_price > tick_math::get_sqrt_price_at_tick(tick_min(pool.tick_spacing)) &&
-                new_initialize_price < tick_math::get_sqrt_price_at_tick(tick_max(pool.tick_spacing)),
-            EINVALID_SQRT_PRICE
+            new_initialize_price > tick_math::get_fifrt_price_at_tick(tick_min(pool.tick_spacing)) &&
+                new_initialize_price < tick_math::get_fifrt_price_at_tick(tick_max(pool.tick_spacing)),
+            EINVALID_FIFRT_PRICE
         );
 
         // 确保池子从未添加过流动性（position_index为1表示只有预留的初始位置）
         assert!(pool.position_index == 1, EPOOL_LIQUIDITY_IS_NOT_ZERO);
-        pool.current_sqrt_price = new_initialize_price;
-        pool.current_tick_index = tick_math::get_tick_at_sqrt_price(new_initialize_price);
+        pool.current_fifrt_price = new_initialize_price;
+        pool.current_tick_index = tick_math::get_tick_at_fifrt_price(new_initialize_price);
     }
 
     // 暂停池子
@@ -1114,7 +1114,7 @@ module eden_clmm::pool {
             tick_lower,
             tick_upper,
             pool.current_tick_index,
-            pool.current_sqrt_price,
+            pool.current_fifrt_price,
             liquidity,
             false,
         );
@@ -1326,7 +1326,6 @@ module eden_clmm::pool {
         // 获取奖励代币并重置应得奖励
         let pool_signer = account::create_signer_with_capability(&pool.signer_cap);
         let amount = &mut position.rewarder_infos.borrow_mut((rewarder_index as u64)).amount_owed;
-        // TODO: 需要获取奖励代币的metadata，这里需要从pool的rewarder_infos中获取
         let rewarder_token = pool.rewarder_infos.borrow((rewarder_index as u64)).token;
         let rewarder_coin = fungible_asset::withdraw(&pool_signer, rewarder_token, *amount);
 
@@ -1388,7 +1387,7 @@ module eden_clmm::pool {
     //     - a2b: 交换方向（true: A换B, false: B换A）
     //     - by_amount_in: 按输入量还是输出量计算（true: 固定输入, false: 固定输出）
     //     - amount: 数量（根据by_amount_in决定是输入量还是输出量）
-    //     - sqrt_price_limit: 价格滑点保护限制
+    //     - fifrt_price_limit: 价格滑点保护限制
     //
     // 返回：
     //     - coin_a: 输出的代币A（如果a2b为true则为零）
@@ -1401,7 +1400,7 @@ module eden_clmm::pool {
         a2b: bool,
         by_amount_in: bool,
         amount: u64,
-        sqrt_price_limit: u128,
+        fifrt_price_limit: u128,
     ): (FungibleAsset, FungibleAsset, FlashSwapReceipt) acquires Pool {
         // 获取合作伙伴推荐费率和协议费率
         let ref_fee_rate = partner::get_ref_fee_rate(partner_name);
@@ -1416,14 +1415,14 @@ module eden_clmm::pool {
         if (a2b) {
             // A换B时，价格应该下降，所以当前价格必须大于限制价格
             assert!(
-                pool.current_sqrt_price > sqrt_price_limit && sqrt_price_limit >= min_sqrt_price(),
-                EWRONG_SQRT_PRICE_LIMIT
+                pool.current_fifrt_price > fifrt_price_limit && fifrt_price_limit >= min_fifrt_price(),
+                EWRONG_FIFRT_PRICE_LIMIT
             );
         } else {
             // B换A时，价格应该上升，所以当前价格必须小于限制价格
             assert!(
-                pool.current_sqrt_price < sqrt_price_limit && sqrt_price_limit <= max_sqrt_price(),
-                EWRONG_SQRT_PRICE_LIMIT
+                pool.current_fifrt_price < fifrt_price_limit && fifrt_price_limit <= max_fifrt_price(),
+                EWRONG_FIFRT_PRICE_LIMIT
             );
         };
 
@@ -1432,7 +1431,7 @@ module eden_clmm::pool {
             pool,
             a2b,
             by_amount_in,
-            sqrt_price_limit,
+            fifrt_price_limit,
             amount,
             protocol_fee_rate,
             ref_fee_rate
@@ -1642,7 +1641,6 @@ module eden_clmm::pool {
         assert!(rewarder.token == reward_token, EREWARD_NOT_MATCH_WITH_INDEX);
 
         // 确保池子有足够的奖励代币余额
-        // TODO: 余额检查需要为FungibleAsset重新实现
         assert!(
             primary_fungible_store::balance(pool_address, reward_token) >= (emission_per_day as u64),
             EREWARD_AMOUNT_INSUFFICIENT
@@ -1883,7 +1881,7 @@ module eden_clmm::pool {
     ): CalculatedSwapResult acquires Pool {
         // 获取池子信息（只读）
         let pool = borrow_global<Pool>(pool_address);
-        let current_sqrt_price = pool.current_sqrt_price;  // 当前sqrt价格
+        let current_fifrt_price = pool.current_fifrt_price;  // 当前sqrt价格
         let current_liquidity = pool.liquidity;  // 当前流动性
         let swap_result = default_swap_result();  // 初始化交换结果
         let remainer_amount = amount;  // 剩余待交换数量
@@ -1895,7 +1893,7 @@ module eden_clmm::pool {
             amount_out: 0, // 输出量
             fee_amount: 0, // 费用
             fee_rate: pool.fee_rate, // 费率
-            after_sqrt_price: pool.current_sqrt_price, // 交换后价格
+            after_fifrt_price: pool.current_fifrt_price, // 交换后价格
             is_exceed: false, // 是否超出范围
             step_results: vector::empty(), // 每步结果
         };
@@ -1913,11 +1911,11 @@ module eden_clmm::pool {
                 break
             };
             let next_tick: Tick = opt_next_tick.destroy_some();
-            let target_sqrt_price = next_tick.sqrt_price;  // 目标sqrt价格
+            let target_fifrt_price = next_tick.fifrt_price;  // 目标sqrt价格
             // 计算单步交换结果
-            let (amount_in, amount_out, next_sqrt_price, fee_amount) = clmm_math::compute_swap_step(
-                current_sqrt_price,
-                target_sqrt_price,
+            let (amount_in, amount_out, next_fifrt_price, fee_amount) = clmm_math::compute_swap_step(
+                current_fifrt_price,
+                target_fifrt_price,
                 current_liquidity,
                 remainer_amount,
                 pool.fee_rate,
@@ -1941,8 +1939,8 @@ module eden_clmm::pool {
             };
             // 记录每步的详细结果
             result.step_results.push_back(SwapStepResult {
-                current_sqrt_price, // 当前价格
-                target_sqrt_price, // 目标价格
+                current_fifrt_price, // 当前价格
+                target_fifrt_price, // 目标价格
                 current_liquidity, // 当前流动性
                 amount_in, // 输入量
                 amount_out, // 输出量
@@ -1950,9 +1948,9 @@ module eden_clmm::pool {
                 remainer_amount      // 剩余数量
             });
             // 检查是否跨越了tick边界
-            if (next_sqrt_price == next_tick.sqrt_price) {
+            if (next_fifrt_price == next_tick.fifrt_price) {
                 // 跨越tick边界，更新价格和流动性
-                current_sqrt_price = next_tick.sqrt_price;
+                current_fifrt_price = next_tick.fifrt_price;
                 // 计算流动性变化量（根据交换方向）
                 let liquidity_change = if (a2b) {
                     i128::neg(next_tick.liquidity_net)  // A到B：减去流动性
@@ -1983,7 +1981,7 @@ module eden_clmm::pool {
                 };
             } else {
                 // 未跨越tick边界，只更新价格
-                current_sqrt_price = next_sqrt_price;
+                current_fifrt_price = next_fifrt_price;
             };
             // 更新下一个tick索引
             if (a2b) {
@@ -1997,7 +1995,7 @@ module eden_clmm::pool {
         result.amount_in = swap_result.amount_in;  // 总输入量
         result.amount_out = swap_result.amount_out;  // 总输出量
         result.fee_amount = swap_result.fee_amount;  // 总费用
-        result.after_sqrt_price = current_sqrt_price;  // 交换后价格
+        result.after_fifrt_price = current_fifrt_price;  // 交换后价格
         result
     }
 
@@ -2324,7 +2322,7 @@ module eden_clmm::pool {
                 tick_lower,
                 tick_upper,
                 pool.current_tick_index,
-                pool.current_sqrt_price,
+                pool.current_fifrt_price,
                 amount,
                 fix_amount_a,
             )
@@ -2334,7 +2332,7 @@ module eden_clmm::pool {
                 tick_lower,
                 tick_upper,
                 pool.current_tick_index,
-                pool.current_sqrt_price,
+                pool.current_fifrt_price,
                 liquidity,
                 true
             );
@@ -2380,7 +2378,7 @@ module eden_clmm::pool {
     //     pool: 池子可变引用
     //     a2b: 是否从A币交换到B币
     //     by_amount_in: 是否按输入量计算
-    //     sqrt_price_limit: sqrt价格限制
+    //     fifrt_price_limit: sqrt价格限制
     //     amount: 交换数量
     //     protocol_fee_rate: 协议费用率
     //     ref_fee_rate: 推荐费用率
@@ -2390,7 +2388,7 @@ module eden_clmm::pool {
         pool: &mut Pool,
         a2b: bool,
         by_amount_in: bool,
-        sqrt_price_limit: u128,
+        fifrt_price_limit: u128,
         amount: u64,
         protocol_fee_rate: u64,
         ref_fee_rate: u64,
@@ -2400,7 +2398,7 @@ module eden_clmm::pool {
         let next_tick_idx = pool.current_tick_index;  // 下一个tick索引
         let (min_tick, max_tick) = (tick_min(pool.tick_spacing), tick_max(pool.tick_spacing));  // tick范围
         // 逐步执行交换
-        while (remainer_amount > 0 && pool.current_sqrt_price != sqrt_price_limit) {
+        while (remainer_amount > 0 && pool.current_fifrt_price != fifrt_price_limit) {
             // 检查是否超出tick范围
             if (i64::gt(next_tick_idx, max_tick) || i64::lt(next_tick_idx, min_tick)) {
                 abort ENOT_ENOUGH_LIQUIDITY  // 流动性不足
@@ -2413,15 +2411,15 @@ module eden_clmm::pool {
             let next_tick: Tick = opt_next_tick.destroy_some();
 
             // 确定目标sqrt价格
-            let target_sqrt_price = if (a2b) {
-                math_u128::max(sqrt_price_limit, next_tick.sqrt_price)  // A到B：取较大值
+            let target_fifrt_price = if (a2b) {
+                math_u128::max(fifrt_price_limit, next_tick.fifrt_price)  // A到B：取较大值
             } else {
-                math_u128::min(sqrt_price_limit, next_tick.sqrt_price)  // B到A：取较小值
+                math_u128::min(fifrt_price_limit, next_tick.fifrt_price)  // B到A：取较小值
             };
             // 计算单步交换结果
-            let (amount_in, amount_out, next_sqrt_price, fee_amount) = clmm_math::compute_swap_step(
-                pool.current_sqrt_price,
-                target_sqrt_price,
+            let (amount_in, amount_out, next_fifrt_price, fee_amount) = clmm_math::compute_swap_step(
+                pool.current_fifrt_price,
+                target_fifrt_price,
                 pool.liquidity,
                 remainer_amount,
                 pool.fee_rate,
@@ -2445,9 +2443,9 @@ module eden_clmm::pool {
                 swap_result.ref_fee_amount = update_pool_fee(pool, fee_amount, ref_fee_rate, protocol_fee_rate, a2b);
             };
             // 检查是否跨越了tick边界
-            if (next_sqrt_price == next_tick.sqrt_price) {
+            if (next_fifrt_price == next_tick.fifrt_price) {
                 // 跨越tick边界，更新价格和tick索引
-                pool.current_sqrt_price = next_tick.sqrt_price;
+                pool.current_fifrt_price = next_tick.fifrt_price;
                 pool.current_tick_index = if (a2b) {
                     i64::sub(next_tick.index, i64::from(1))  // A到B：向左移动
                 } else {
@@ -2457,8 +2455,8 @@ module eden_clmm::pool {
                 cross_tick_and_update_liquidity(pool, next_tick.index, a2b);
             } else {
                 // 未跨越tick边界，只更新价格和tick索引
-                pool.current_sqrt_price = next_sqrt_price;
-                pool.current_tick_index = tick_math::get_tick_at_sqrt_price(next_sqrt_price);
+                pool.current_fifrt_price = next_fifrt_price;
+                pool.current_tick_index = tick_math::get_tick_at_fifrt_price(next_fifrt_price);
             };
             // 更新下一个tick索引
             if (a2b) {
@@ -2809,7 +2807,7 @@ module eden_clmm::pool {
     fun default_tick(tick_idx: I64): Tick {
         Tick {
             index: tick_idx, // tick索引
-            sqrt_price: tick_math::get_sqrt_price_at_tick(tick_idx), // 对应的sqrt价格
+            fifrt_price: tick_math::get_fifrt_price_at_tick(tick_idx), // 对应的sqrt价格
             liquidity_net: i128::from(0), // 净流动性为0
             liquidity_gross: 0, // 总流动性为0
             fee_growth_outside_a: 0, // A币外部费用增长率为0

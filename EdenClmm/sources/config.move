@@ -25,7 +25,10 @@ module eden_clmm::config {
 
    // 角色定义
     const ROLE_SET_POSITION_NFT_URI: u8 = 1; // 设置位置NFT URI的角色
-    const ROLE_RESET_INIT_SQRT_PRICE: u8 = 2; // 重置初始sqrt价格的角色
+    const ROLE_RESET_INIT_FIFRT_PRICE: u8 = 2; // 重置初始sqrt价格的角色
+
+    // x^4 * y = k, degree = 4 + 1 = 5
+    const CURVE_DEGREE: u64 = 5;
 
    // CLMM池的全局配置
     struct GlobalConfig has key {
@@ -295,7 +298,7 @@ module eden_clmm::config {
    // 参数：account - 协议权限账户，member - 成员地址，role - 角色值
     public fun add_role(account: &signer, member: address, role: u8) acquires GlobalConfig, ClmmACL {
         assert!(
-            role == ROLE_SET_POSITION_NFT_URI || role == ROLE_RESET_INIT_SQRT_PRICE,
+            role == ROLE_SET_POSITION_NFT_URI || role == ROLE_RESET_INIT_FIFRT_PRICE,
             EINVALID_ACL_ROLE
         );
         assert_protocol_authority(account);
@@ -307,7 +310,7 @@ module eden_clmm::config {
    // 参数：account - 协议权限账户，member - 成员地址，role - 角色值
     public fun remove_role(account: &signer, member: address, role: u8) acquires GlobalConfig, ClmmACL {
         assert!(
-            role == ROLE_SET_POSITION_NFT_URI || role == ROLE_RESET_INIT_SQRT_PRICE,
+            role == ROLE_SET_POSITION_NFT_URI || role == ROLE_RESET_INIT_FIFRT_PRICE,
             EINVALID_ACL_ROLE
         );
         assert_protocol_authority(account);
@@ -330,9 +333,18 @@ module eden_clmm::config {
     public fun assert_reset_init_price_authority(account: &signer) acquires ClmmACL {
         let clmm_acl = borrow_global<ClmmACL>(@eden_clmm);
         if (!acl::has_role(
-            &clmm_acl.acl, signer::address_of(account), ROLE_RESET_INIT_SQRT_PRICE
+            &clmm_acl.acl, signer::address_of(account), ROLE_RESET_INIT_FIFRT_PRICE
         )) {
             abort ENOT_HAS_PRIVILEGE
         }
+    }
+
+    // tick space 必须是该因子的倍数
+    public fun tick_space_factor(): u64 {
+        curve_degree()
+    }
+
+    public fun curve_degree(): u64 {
+        CURVE_DEGREE
     }
 }

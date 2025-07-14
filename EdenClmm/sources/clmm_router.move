@@ -119,7 +119,7 @@ module eden_clmm::clmm_router {
     //         - CoinTypeA
     //         - CoinTypeB
     //     - tick_spacing
-    //     - initialize_sqrt_price: the init sqrt price of the pool.
+    //     - initialize_fifrt_price: the init sqrt price of the pool.
     //     - uri: this uri is used for token uri of the position token of this pool.
     // Returns
     public entry fun create_pool(
@@ -127,7 +127,7 @@ module eden_clmm::clmm_router {
         token_a: Object<Metadata>,
         token_b: Object<Metadata>,
         tick_spacing: u64,
-        initialize_sqrt_price: u128,
+        initialize_fifrt_price: u128,
         uri: String
     ) {
         factory::create_pool(
@@ -135,7 +135,7 @@ module eden_clmm::clmm_router {
             token_a,
             token_b,
             tick_spacing,
-            initialize_sqrt_price,
+            initialize_fifrt_price,
             uri
         );
     }
@@ -441,7 +441,7 @@ module eden_clmm::clmm_router {
     //     - amount: 交换数量
     //     - amount_limit: 如果by_amount_in为true，amount_limit是最小输出数量；
     //                     如果by_amount_in为false，amount_limit是最大输入数量
-    //     - sqrt_price_limit: 价格限制
+    //     - fifrt_price_limit: 价格限制
     //     - partner: 合作伙伴名称
     public entry fun swap(
         account: &signer,
@@ -450,7 +450,7 @@ module eden_clmm::clmm_router {
         by_amount_in: bool,
         amount: u64,
         amount_limit: u64,
-        sqrt_price_limit: u128,
+        fifrt_price_limit: u128,
         partner: String,
         metadata_a: Object<Metadata>,
         metadata_b: Object<Metadata>
@@ -464,7 +464,7 @@ module eden_clmm::clmm_router {
                 a_to_b,
                 by_amount_in,
                 amount,
-                sqrt_price_limit
+                fifrt_price_limit
             );
         let in_amount = pool::swap_pay_amount(&flash_receipt);
         let out_amount =

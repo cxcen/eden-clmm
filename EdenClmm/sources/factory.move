@@ -112,7 +112,7 @@ module eden_clmm::factory {
             } else { uri };
 
         assert!(
-            initialize_price >= tick_math::min_sqrt_price() && initialize_price <= tick_math::max_sqrt_price(),
+            initialize_price >= tick_math::min_fifrt_price() && initialize_price <= tick_math::max_fifrt_price(),
             EINVALID_SQRTPRICE
         );
 

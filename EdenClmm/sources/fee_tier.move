@@ -18,6 +18,7 @@ module eden_clmm::fee_tier {
     const EFEE_TIER_NOT_FOUND: u64 = 2; // 费用等级未找到
     const EFEETIER_ALREADY_INITIALIZED: u64 = 3; // 费用等级已初始化
     const EINVALID_FEE_RATE: u64 = 4; // 无效的费率
+    const EINVALID_TICK_SPACE: u64 = 5; // 无效的间隔
 
    // CLMM池的费用等级数据结构
     struct FeeTier has store, copy, drop {
@@ -71,17 +72,13 @@ module eden_clmm::fee_tier {
 
    // 添加费用等级
    // 参数：account - 协议权限账户，tick_spacing - tick间距，fee_rate - 费率
-    public fun add_fee_tier(
-        account: &signer, tick_spacing: u64, fee_rate: u64
-    ) acquires FeeTiers {
+    public fun add_fee_tier(account: &signer, tick_spacing: u64, fee_rate: u64) acquires FeeTiers {
         assert!(fee_rate <= MAX_FEE_RATE, EINVALID_FEE_RATE);
+        assert!(tick_spacing % config::tick_space_factor() == 0, EINVALID_TICK_SPACE);
 
         config::assert_protocol_authority(account);
         let fee_tiers = borrow_global_mut<FeeTiers>(@eden_clmm);
-        assert!(
-            !fee_tiers.fee_tiers.contains_key(&tick_spacing),
-            EFEE_TIER_ALREADY_EXIST
-        );
+        assert!(!fee_tiers.fee_tiers.contains_key(&tick_spacing), EFEE_TIER_ALREADY_EXIST);
         fee_tiers.fee_tiers.add(tick_spacing, FeeTier { tick_spacing, fee_rate });
         event::emit_event(
             &mut fee_tiers.add_events,
