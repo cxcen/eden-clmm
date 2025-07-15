@@ -2,11 +2,14 @@
 /// 该模块提供了tick索引和sqrt价格之间的转换功能
 /// 类似于Uniswap V3的tick数学运算，用于集中流动性管理
 module eden_clmm::tick_math {
-    use aptos_std::debug::print;
     use eden_clmm::config;
     use integer_mate::full_math_u128;
     use integer_mate::i64::{Self, I64};
     use integer_mate::i128;
+    #[test_only]
+    use aptos_std::debug::print;
+    #[test_only]
+    use aptos_std::string_utils;
 
 
     // 常量定义
@@ -70,11 +73,9 @@ module eden_clmm::tick_math {
     // 参数：tick - tick索引
     // 返回值：对应的sqrt价格
     public fun get_fifrt_price_at_tick(tick: i64::I64): u128 {
-        print(&tick);
 
         assert!(i64::gte(tick, min_tick()), EINVALID_TICK);
         let max_tick = max_tick();
-        print(&max_tick);
         assert!(i64::lte(tick, max_tick), EINVALID_TICK);
         // fifth root of price of tick convet to sqrt price of tick at (tick * 2 / 5)
         let tick = i64::div(i64::mul(tick, i64::from(2)), i64::from(config::curve_degree()));
@@ -152,6 +153,7 @@ module eden_clmm::tick_math {
             shift = shift - 1;
         };
 
+        //         let log_fifrt_10001 = i128::mul(log_2_x32, i128::from(59543866431366u128));
         // 计算log(fifrt(1.0001)) * 2^64
         let log_fifrt_10001 = i128::mul(log_2_x32, i128::from(148859665781220u128));
 
@@ -190,64 +192,64 @@ module eden_clmm::tick_math {
         let abs_tick = i64::as_u64(i64::abs(tick));
         let ratio =
             if (abs_tick & 0x1 != 0) {
-                0xfffcb933bd6fad37aa2d162d1u128 // 18445821805675392311
+                18445821805675392311u128
             } else {
-                0x10000000000000000u128 // 18446744073709551616
+                18446744073709551616u128
             };
         // 通过位运算逐步计算价格比率
         if (abs_tick & 0x2 != 0) {
-            ratio = full_math_u128::mul_shr(ratio, 0xfff97272373d413259a469905u128, 64u8); // 18444899583751176498
+            ratio = full_math_u128::mul_shr(ratio, 18444899583751176498u128, 64u8)
         };
         if (abs_tick & 0x4 != 0) {
-            ratio = full_math_u128::mul_shr(ratio, 0xfff2e50f5f656932ef12357cfu128, 64u8); // 18443055278223354162
+            ratio = full_math_u128::mul_shr(ratio, 18443055278223354162u128, 64u8);
         };
         if (abs_tick & 0x8 != 0) {
-            ratio = full_math_u128::mul_shr(ratio, 0xffe5caca7e10e4e61c3624eaau128, 64u8); // 18439367220385604838
+            ratio = full_math_u128::mul_shr(ratio, 18439367220385604838u128, 64u8);
         };
         if (abs_tick & 0x10 != 0) {
-            ratio = full_math_u128::mul_shr(ratio, 0xffcb9843d60f6159c9db58835u128, 64u8); // 18431993317065449817
+            ratio = full_math_u128::mul_shr(ratio, 18431993317065449817u128, 64u8);
         };
         if (abs_tick & 0x20 != 0) {
-            ratio = full_math_u128::mul_shr(ratio, 0xff973b41fa98c081472e6896du128, 64u8); // 18417254355718160513
+            ratio = full_math_u128::mul_shr(ratio, 18417254355718160513u128, 64u8);
         };
         if (abs_tick & 0x40 != 0) {
-            ratio = full_math_u128::mul_shr(ratio, 0xff2ea16466c96a3843ec78b33u128, 64u8); // 18387811781193591352
+            ratio = full_math_u128::mul_shr(ratio, 18387811781193591352u128, 64u8);
         };
         if (abs_tick & 0x80 != 0) {
-            ratio = full_math_u128::mul_shr(ratio, 0xfe5dee046a99a2a811c461f196u128, 64u8); // 18329067761203520168
+            ratio = full_math_u128::mul_shr(ratio, 18329067761203520168u128, 64u8);
         };
         if (abs_tick & 0x100 != 0) {
-            ratio = full_math_u128::mul_shr(ratio, 0xfcbe86c7900a88aedcffc83b479u128, 64u8); // 18212142134806087854
+            ratio = full_math_u128::mul_shr(ratio, 18212142134806087854u128, 64u8);
         };
         if (abs_tick & 0x200 != 0) {
-            ratio = full_math_u128::mul_shr(ratio, 0xf987a7253ac413176f2b074cfu128, 64u8); // 17980523815641551639
+            ratio = full_math_u128::mul_shr(ratio, 17980523815641551639u128, 64u8);
         };
         if (abs_tick & 0x400 != 0) {
-            ratio = full_math_u128::mul_shr(ratio, 0xf3392b0822b70005940c7a398u128, 64u8); // 17526086738831147013
+            ratio = full_math_u128::mul_shr(ratio, 17526086738831147013u128, 64u8);
         };
         if (abs_tick & 0x800 != 0) {
-            ratio = full_math_u128::mul_shr(ratio, 0xe7159475a2c29b7443b29c7fa6u128, 64u8); // 16651378430235024244
+            ratio = full_math_u128::mul_shr(ratio, 16651378430235024244u128, 64u8);
         };
         if (abs_tick & 0x1000 != 0) {
-            ratio = full_math_u128::mul_shr(ratio, 0xd097f3bdfd2022b8845ad8f792u128, 64u8); // 15030750278693429944
+            ratio = full_math_u128::mul_shr(ratio, 15030750278693429944u128, 64u8);
         };
         if (abs_tick & 0x2000 != 0) {
-            ratio = full_math_u128::mul_shr(ratio, 0xa9f746462d870fdf8a65dc1f90u128, 64u8); // 12247334978882834399
+            ratio = full_math_u128::mul_shr(ratio, 12247334978882834399u128, 64u8);
         };
         if (abs_tick & 0x4000 != 0) {
-            ratio = full_math_u128::mul_shr(ratio, 0x70d869a156d2a1b890bb3df62baf32u128, 64u8); // 8131365268884726200
+            ratio = full_math_u128::mul_shr(ratio, 8131365268884726200u128, 64u8);
         };
         if (abs_tick & 0x8000 != 0) {
-            ratio = full_math_u128::mul_shr(ratio, 0x31be135f97d08fd981231505542fcfa6u128, 64u8); // 3584323654723342297
+            ratio = full_math_u128::mul_shr(ratio, 3584323654723342297u128, 64u8);
         };
         if (abs_tick & 0x10000 != 0) {
-            ratio = full_math_u128::mul_shr(ratio, 0x9aa508b5b7a84e1c677de54f3e99bc9u128, 64u8); // 696457651847595233
+            ratio = full_math_u128::mul_shr(ratio, 696457651847595233u128, 64u8);
         };
         if (abs_tick & 0x20000 != 0) {
-            ratio = full_math_u128::mul_shr(ratio, 0x5d6af8dedb81196699c329225ee604u128, 64u8); // 26294789957452057
+            ratio = full_math_u128::mul_shr(ratio, 26294789957452057u128, 64u8);
         };
         if (abs_tick & 0x40000 != 0) {
-            ratio = full_math_u128::mul_shr(ratio, 0x2216e584f5fa1ea926041bedfe98u128, 64u8); // 37481735321082
+            ratio = full_math_u128::mul_shr(ratio, 37481735321082u128, 64u8);
         };
 
         ratio
@@ -260,99 +262,100 @@ module eden_clmm::tick_math {
         let abs_tick = i64::as_u64(i64::abs(tick));
         let ratio =
             if (abs_tick & 0x1 != 0) {
-                0x0bfcbd7bb5f6c38b63b76b153u128 // 79232123823359799118286999567
+                79232123823359799118286999567u128
             } else {
-                0x1000000000000000000000000u128 // 79228162514264337593543950336
+                79228162514264337593543950336u128
             };
 
+        // 通过位运算逐步计算价格比率（正tick）
         if (abs_tick & 0x2 != 0) {
             ratio = full_math_u128::mul_shr(
-                ratio, 0x0bfd4b27c5bfffd7b4f7e0d0b3u128, 96u8 // 79236085330515764027303304731
+                ratio, 79236085330515764027303304731u128, 96u8
             )
         };
         if (abs_tick & 0x4 != 0) {
             ratio = full_math_u128::mul_shr(
-                ratio, 0x0bffdf58f06fd22d4fbb81bd05u128, 96u8 // 79244008939048815603706035061
+                ratio, 79244008939048815603706035061u128, 96u8
             )
         };
         if (abs_tick & 0x8 != 0) {
             ratio = full_math_u128::mul_shr(
-                ratio, 0x0c0452e77038b4be8fe5106f91u128, 96u8 // 79259858533276714757314932305
+                ratio, 79259858533276714757314932305u128, 96u8
             )
         };
         if (abs_tick & 0x10 != 0) {
             ratio = full_math_u128::mul_shr(
-                ratio, 0x0c0d2d1d5e0e3bc278aa7ff560u128, 96u8 // 79291567232598584799939703904
+                ratio, 79291567232598584799939703904u128, 96u8
             )
         };
         if (abs_tick & 0x20 != 0) {
             ratio = full_math_u128::mul_shr(
-                ratio, 0x0c2f65d739d8b705b1c5feab52u128, 96u8 // 79355022692464371645785046466
+                ratio, 79355022692464371645785046466u128, 96u8
             )
         };
         if (abs_tick & 0x40 != 0) {
             ratio = full_math_u128::mul_shr(
-                ratio, 0x0c7399e4e7556d6442a2fd9c75u128, 96u8 // 79482085999252804386437311141
+                ratio, 79482085999252804386437311141u128, 96u8
             )
         };
         if (abs_tick & 0x80 != 0) {
             ratio = full_math_u128::mul_shr(
-                ratio, 0x0ce7dfd0a27edc3ed0b1d2b89eu128, 96u8 // 79736823300114093921829183326
+                ratio, 79736823300114093921829183326u128, 96u8
             )
         };
         if (abs_tick & 0x100 != 0) {
             ratio = full_math_u128::mul_shr(
-                ratio, 0x0deb13496b378b3818db1e60e4u128, 96u8 // 80248749790819932309965073892
+                ratio, 80248749790819932309965073892u128, 96u8
             )
         };
         if (abs_tick & 0x200 != 0) {
             ratio = full_math_u128::mul_shr(
-                ratio, 0x0e44279e6d0e67836e5db67a43u128, 96u8 // 81282483887344747381513967011
+                ratio, 81282483887344747381513967011u128, 96u8
             )
         };
         if (abs_tick & 0x400 != 0) {
             ratio = full_math_u128::mul_shr(
-                ratio, 0x0f27f616b3807c0e6e5aee3431u128, 96u8 // 83390072131320151908154831281
+                ratio, 83390072131320151908154831281u128, 96u8
             )
         };
         if (abs_tick & 0x800 != 0) {
             ratio = full_math_u128::mul_shr(
-                ratio, 0x133cd7cd5c8b87a3f5cbd37f1au128, 96u8 // 87770609709833776024991924138
+                ratio, 87770609709833776024991924138u128, 96u8
             )
         };
         if (abs_tick & 0x1000 != 0) {
             ratio = full_math_u128::mul_shr(
-                ratio, 0x152f011185b3bda863eaacdf25u128, 96u8 // 97234110755111693312479820773
+                ratio, 97234110755111693312479820773u128, 96u8
             )
         };
         if (abs_tick & 0x2000 != 0) {
             ratio = full_math_u128::mul_shr(
-                ratio, 0x1a13aa2b8cc21fdc94c5e6ffb2u128, 96u8 // 119332217159966728226237229890
+                ratio, 119332217159966728226237229890u128, 96u8
             )
         };
         if (abs_tick & 0x4000 != 0) {
             ratio = full_math_u128::mul_shr(
-                ratio, 0x27d9e6e41992f9b92b11f20437u128, 96u8 // 179736315981702064433883588727
+                ratio, 179736315981702064433883588727u128, 96u8
             )
         };
         if (abs_tick & 0x8000 != 0) {
             ratio = full_math_u128::mul_shr(
-                ratio, 0x5a84f6a4b9e3216f5f2a1abbd8u128, 96u8 // 407748233172238350107850275304
+                ratio, 407748233172238350107850275304u128, 96u8
             )
         };
         if (abs_tick & 0x10000 != 0) {
             ratio = full_math_u128::mul_shr(
-                ratio, 0x1dbbb8b08e4a361509091ba1355u128, 96u8 // 2098478828474011932436660412517
+                ratio, 2098478828474011932436660412517u128, 96u8
             )
         };
         if (abs_tick & 0x20000 != 0) {
             ratio = full_math_u128::mul_shr(
-                ratio, 0xc55f7995b7da3fc59f9a3ed3bcu128, 96u8 // 55581415166113811149459800483533
+                ratio, 55581415166113811149459800483533u128, 96u8
             )
         };
         if (abs_tick & 0x40000 != 0) {
             ratio = full_math_u128::mul_shr(
-                ratio, 0x20a1c0d811d6dc3efb9ca1e17a7u128, 96u8 // 38992368544603139932233054999993551
+                ratio, 38992368544603139932233054999993551u128, 96u8
             )
         };
 
@@ -381,14 +384,17 @@ module eden_clmm::tick_math {
     // 测试函数 - 测试tick和sqrt价格的相互转换
     #[test]
     fun test_tick_swap_fifrt_price() {
-        let t = i64::from(400800);
-        while (i64::lte(t, i64::from(401200))) {
-            print(&t);
+        let t = i64::neg_from(1109090);
+        while (i64::lte(t, i64::from(1109090))) {
             let fifrt_price = get_fifrt_price_at_tick(t);
-            print(&fifrt_price);
             let tick = get_tick_at_fifrt_price(fifrt_price);
-            assert!(i64::eq(t, tick) == true, 0);
-            t = i64::add(t, i64::from(1));
+            if (i64::is_neg(t)) {
+                print(&string_utils::format2(&b"-{} -{}", i64::abs(t), i64::abs(tick)));
+            } else {
+                print(&string_utils::format2(&b"{} {}", i64::abs(t), i64::abs(tick)));
+            };
+            //assert!(i64::eq(t, tick) == true, 0);
+            t = i64::add(t, i64::from(10000));
         }
     }
 
