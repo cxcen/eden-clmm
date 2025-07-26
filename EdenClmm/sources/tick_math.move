@@ -6,10 +6,6 @@ module eden_clmm::tick_math {
     use integer_mate::full_math_u128;
     use integer_mate::i64::{Self, I64};
     use integer_mate::i128;
-    #[test_only]
-    use aptos_std::debug::print;
-    #[test_only]
-    use aptos_std::string_utils;
 
 
     // 常量定义
@@ -73,7 +69,6 @@ module eden_clmm::tick_math {
     // 参数：tick - tick索引
     // 返回值：对应的sqrt价格
     public fun get_fifrt_price_at_tick(tick: i64::I64): u128 {
-
         assert!(i64::gte(tick, min_tick()), EINVALID_TICK);
         let max_tick = max_tick();
         assert!(i64::lte(tick, max_tick), EINVALID_TICK);
@@ -384,17 +379,38 @@ module eden_clmm::tick_math {
     // 测试函数 - 测试tick和sqrt价格的相互转换
     #[test]
     fun test_tick_swap_fifrt_price() {
-        let t = i64::neg_from(1109090);
-        while (i64::lte(t, i64::from(1109090))) {
+        let t = i64::neg_from(1000000);
+        while (i64::lte(t, i64::from(1000000))) {
             let fifrt_price = get_fifrt_price_at_tick(t);
             let tick = get_tick_at_fifrt_price(fifrt_price);
-            if (i64::is_neg(t)) {
-                print(&string_utils::format2(&b"-{} -{}", i64::abs(t), i64::abs(tick)));
-            } else {
-                print(&string_utils::format2(&b"{} {}", i64::abs(t), i64::abs(tick)));
+            {
+
+                let tu64 = i64::as_u64(i64::abs(t));
+                let ticku64 =  i64::as_u64(i64::abs(tick));
+                let diff = i64::as_u64(i64::abs(i64::sub(t, tick)));
+
+                if (i64::is_neg(t)) {
+                    aptos_std::debug::print(
+                        &aptos_std::string_utils::format3(
+                            &b"-{} -{}, diff {}",
+                            tu64,
+                            ticku64,
+                            diff
+                        )
+                    );
+                } else {
+                    aptos_std::debug::print(
+                        &aptos_std::string_utils::format3(
+                            &b"{} {}, diff {}",
+                            tu64,
+                            ticku64,
+                            diff
+                        )
+                    );
+                };
             };
             //assert!(i64::eq(t, tick) == true, 0);
-            t = i64::add(t, i64::from(10000));
+            t = i64::add(t, i64::from(10001));
         }
     }
 
