@@ -148,6 +148,12 @@ $$
 P_2 = P_1 \cdot \left(1 + \frac{\Delta x_{in}}{L} \cdot P_1^{\frac{1}{N+1}}\right)^{-(N+1)}
 $$
 
+$$
+P_2^{\frac{1}{N+1}}  = P_1^{\frac{1}{N+1}} \cdot \left(1 + \frac{\Delta x_{in}}{L} \cdot P_1^{\frac{1}{N+1}}\right)^{-1}
+$$
+
+
+
 **步骤2：计算输出**
 $$
 \boxed{\Delta y_{out} = \frac{L}{N} \cdot \left(P_1^{\frac{N}{N+1}} - P_2^{\frac{N}{N+1}}\right)}

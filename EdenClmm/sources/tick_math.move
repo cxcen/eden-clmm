@@ -50,20 +50,20 @@ module eden_clmm::tick_math {
         TICK_BOUND
     }
 
-    // 根据tick值获取sqrt价格
-    // 参数：tick - tick索引
-    // 返回值：对应的sqrt价格
-    public fun get_sqrt_price_at_tick(tick: i64::I64): u128 {
-        assert!(
-            i64::gte(tick, min_tick()) && i64::lte(tick, max_tick()),
-            EINVALID_TICK
-        );
-        if (i64::is_neg(tick)) {
-            get_sqrt_price_at_negative_tick(tick)
-        } else {
-            get_sqrt_price_at_positive_tick(tick)
-        }
-    }
+    // // 根据tick值获取sqrt价格
+    // // 参数：tick - tick索引
+    // // 返回值：对应的sqrt价格
+    // public fun get_sqrt_price_at_tick(tick: i64::I64): u128 {
+    //     assert!(
+    //         i64::gte(tick, min_tick()) && i64::lte(tick, max_tick()),
+    //         EINVALID_TICK
+    //     );
+    //     if (i64::is_neg(tick)) {
+    //         get_sqrt_price_at_negative_tick(tick)
+    //     } else {
+    //         get_sqrt_price_at_positive_tick(tick)
+    //     }
+    // }
 
     // 根据tick值获取fifrt价格
     // 参数：tick - tick索引
