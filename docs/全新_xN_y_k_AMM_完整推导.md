@@ -1,4 +1,4 @@
-# $x^N \cdot y = k$ AMM 曲线完整数学推导
+# $x^N \cdot y = k$ 曲线AMM数学推导
 
 ## 前言
 
@@ -94,6 +94,12 @@ $$
 $$
 \boxed{L = (N \cdot k)^{\frac{1}{N+1}} \cdot \left(P_{\min}^{-\frac{1}{N+1}} - P_{\max}^{-\frac{1}{N+1}}\right)}
 $$
+
+$$
+\boxed{k = \frac{L^{N+1}}{N}} \quad \text{和} \quad \boxed{L = (N \cdot k)^{\frac{1}{N+1}}}
+$$
+
+
 
 ### 2.3 储备量计算公式
 
