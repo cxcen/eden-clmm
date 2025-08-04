@@ -50,21 +50,6 @@ module eden_clmm::tick_math {
         TICK_BOUND
     }
 
-    // // 根据tick值获取sqrt价格
-    // // 参数：tick - tick索引
-    // // 返回值：对应的sqrt价格
-    // public fun get_sqrt_price_at_tick(tick: i64::I64): u128 {
-    //     assert!(
-    //         i64::gte(tick, min_tick()) && i64::lte(tick, max_tick()),
-    //         EINVALID_TICK
-    //     );
-    //     if (i64::is_neg(tick)) {
-    //         get_sqrt_price_at_negative_tick(tick)
-    //     } else {
-    //         get_sqrt_price_at_positive_tick(tick)
-    //     }
-    // }
-
     // 根据tick值获取fifrt价格
     // 参数：tick - tick索引
     // 返回值：对应的sqrt价格
@@ -74,10 +59,115 @@ module eden_clmm::tick_math {
         assert!(i64::lte(tick, max_tick), EINVALID_TICK);
         // fifth root of price of tick convet to sqrt price of tick at (tick * 2 / 5)
         let tick = i64::div(i64::mul(tick, i64::from(2)), i64::from(config::curve_degree()));
-        if (i64::is_neg(tick)) {
-            get_sqrt_price_at_negative_tick(tick)
-        } else {
-            get_sqrt_price_at_positive_tick(tick)
+
+        {
+            let abs_tick = i64::as_u64(i64::abs(tick));
+
+            // 基础比率：如果abs_tick & 0x1 != 0，则为 0xfffcb933bd6fb800，否则为 2^64
+            let ratio =
+                if (abs_tick & 0x1 != 0) {
+                    0xfffcb933bd6fb800u128
+                } else {
+                    0x10000000000000000u128 // 2^64
+                };
+
+            // 按位计算比率
+            let ratio =
+                if (abs_tick & 0x2 != 0) {
+                    full_math_u128::mul_shr(ratio, 0xfff97272373d4000u128, 64u8)
+                } else { ratio };
+
+            let ratio =
+                if (abs_tick & 0x4 != 0) {
+                    full_math_u128::mul_shr(ratio, 0xfff2e50f5f657000u128, 64u8)
+                } else { ratio };
+
+            let ratio =
+                if (abs_tick & 0x8 != 0) {
+                    full_math_u128::mul_shr(ratio, 0xffe5caca7e10f000u128, 64u8)
+                } else { ratio };
+
+            let ratio =
+                if (abs_tick & 0x10 != 0) {
+                    full_math_u128::mul_shr(ratio, 0xffcb9843d60f7000u128, 64u8)
+                } else { ratio };
+
+            let ratio =
+                if (abs_tick & 0x20 != 0) {
+                    full_math_u128::mul_shr(ratio, 0xff973b41fa98e800u128, 64u8)
+                } else { ratio };
+
+            let ratio =
+                if (abs_tick & 0x40 != 0) {
+                    full_math_u128::mul_shr(ratio, 0xff2ea16466c9b000u128, 64u8)
+                } else { ratio };
+
+            let ratio =
+                if (abs_tick & 0x80 != 0) {
+                    full_math_u128::mul_shr(ratio, 0xfe5dee046a9a3800u128, 64u8)
+                } else { ratio };
+
+            let ratio =
+                if (abs_tick & 0x100 != 0) {
+                    full_math_u128::mul_shr(ratio, 0xfcbe86c7900bb000u128, 64u8)
+                } else { ratio };
+
+            let ratio =
+                if (abs_tick & 0x200 != 0) {
+                    full_math_u128::mul_shr(ratio, 0xf987a7253ac65800u128, 64u8)
+                } else { ratio };
+
+            let ratio =
+                if (abs_tick & 0x400 != 0) {
+                    full_math_u128::mul_shr(ratio, 0xf3392b0822bb6000u128, 64u8)
+                } else { ratio };
+
+            let ratio =
+                if (abs_tick & 0x800 != 0) {
+                    full_math_u128::mul_shr(ratio, 0xe7159475a2caf000u128, 64u8)
+                } else { ratio };
+
+            let ratio =
+                if (abs_tick & 0x1000 != 0) {
+                    full_math_u128::mul_shr(ratio, 0xd097f3bdfd2f2000u128, 64u8)
+                } else { ratio };
+
+            let ratio =
+                if (abs_tick & 0x2000 != 0) {
+                    full_math_u128::mul_shr(ratio, 0xa9f746462d9f8000u128, 64u8)
+                } else { ratio };
+
+            let ratio =
+                if (abs_tick & 0x4000 != 0) {
+                    full_math_u128::mul_shr(ratio, 0x70d869a156f31c00u128, 64u8)
+                } else { ratio };
+
+            let ratio =
+                if (abs_tick & 0x8000 != 0) {
+                    full_math_u128::mul_shr(ratio, 0x31be135f97ed3200u128, 64u8)
+                } else { ratio };
+
+            let ratio =
+                if (abs_tick & 0x10000 != 0) {
+                    full_math_u128::mul_shr(ratio, 0x9aa508b5b85a500u128, 64u8)
+                } else { ratio };
+
+            let ratio =
+                if (abs_tick & 0x20000 != 0) {
+                    full_math_u128::mul_shr(ratio, 0x5d6af8dedc582cu128, 64u8)
+                } else { ratio };
+
+            let ratio =
+                if (abs_tick & 0x40000 != 0) {
+                    full_math_u128::mul_shr(ratio, 0x2216e584f5fau128, 64u8)
+                } else { ratio };
+
+            // 如果tick为正，则取倒数
+            if (!i64::is_neg(tick) && !i64::eq(tick, i64::from(0))) {
+                // U128::MAX / ratio 的等价计算
+                let max_u128 = 0xffffffffffffffffffffffffffffffffu128;
+                max_u128 / ratio
+            } else { ratio }
         }
     }
 
@@ -148,9 +238,9 @@ module eden_clmm::tick_math {
             shift = shift - 1;
         };
 
-        //         let log_fifrt_10001 = i128::mul(log_2_x32, i128::from(59543866431366u128));
+        //let log_fifrt_10001 = i128::mul(log_2_x32, i128::from(59543866431366u128));
         // 计算log(fifrt(1.0001)) * 2^64
-        let log_fifrt_10001 = i128::mul(log_2_x32, i128::from(148859665781220u128));
+        let log_fifrt_10001 = i128::mul(log_2_x32, i128::from(148859666078120u128));
 
         // 计算tick的上下界
         let tick_low =
@@ -178,183 +268,6 @@ module eden_clmm::tick_math {
     fun as_u8(b: bool): u8 {
         if (b) { 1 }
         else { 0 }
-    }
-
-    // 计算负tick对应的sqrt价格
-    // 参数：tick - 负tick值
-    // 返回值：对应的sqrt价格
-    fun get_sqrt_price_at_negative_tick(tick: i64::I64): u128 {
-        let abs_tick = i64::as_u64(i64::abs(tick));
-        let ratio =
-            if (abs_tick & 0x1 != 0) {
-                18445821805675392311u128
-            } else {
-                18446744073709551616u128
-            };
-        // 通过位运算逐步计算价格比率
-        if (abs_tick & 0x2 != 0) {
-            ratio = full_math_u128::mul_shr(ratio, 18444899583751176498u128, 64u8)
-        };
-        if (abs_tick & 0x4 != 0) {
-            ratio = full_math_u128::mul_shr(ratio, 18443055278223354162u128, 64u8);
-        };
-        if (abs_tick & 0x8 != 0) {
-            ratio = full_math_u128::mul_shr(ratio, 18439367220385604838u128, 64u8);
-        };
-        if (abs_tick & 0x10 != 0) {
-            ratio = full_math_u128::mul_shr(ratio, 18431993317065449817u128, 64u8);
-        };
-        if (abs_tick & 0x20 != 0) {
-            ratio = full_math_u128::mul_shr(ratio, 18417254355718160513u128, 64u8);
-        };
-        if (abs_tick & 0x40 != 0) {
-            ratio = full_math_u128::mul_shr(ratio, 18387811781193591352u128, 64u8);
-        };
-        if (abs_tick & 0x80 != 0) {
-            ratio = full_math_u128::mul_shr(ratio, 18329067761203520168u128, 64u8);
-        };
-        if (abs_tick & 0x100 != 0) {
-            ratio = full_math_u128::mul_shr(ratio, 18212142134806087854u128, 64u8);
-        };
-        if (abs_tick & 0x200 != 0) {
-            ratio = full_math_u128::mul_shr(ratio, 17980523815641551639u128, 64u8);
-        };
-        if (abs_tick & 0x400 != 0) {
-            ratio = full_math_u128::mul_shr(ratio, 17526086738831147013u128, 64u8);
-        };
-        if (abs_tick & 0x800 != 0) {
-            ratio = full_math_u128::mul_shr(ratio, 16651378430235024244u128, 64u8);
-        };
-        if (abs_tick & 0x1000 != 0) {
-            ratio = full_math_u128::mul_shr(ratio, 15030750278693429944u128, 64u8);
-        };
-        if (abs_tick & 0x2000 != 0) {
-            ratio = full_math_u128::mul_shr(ratio, 12247334978882834399u128, 64u8);
-        };
-        if (abs_tick & 0x4000 != 0) {
-            ratio = full_math_u128::mul_shr(ratio, 8131365268884726200u128, 64u8);
-        };
-        if (abs_tick & 0x8000 != 0) {
-            ratio = full_math_u128::mul_shr(ratio, 3584323654723342297u128, 64u8);
-        };
-        if (abs_tick & 0x10000 != 0) {
-            ratio = full_math_u128::mul_shr(ratio, 696457651847595233u128, 64u8);
-        };
-        if (abs_tick & 0x20000 != 0) {
-            ratio = full_math_u128::mul_shr(ratio, 26294789957452057u128, 64u8);
-        };
-        if (abs_tick & 0x40000 != 0) {
-            ratio = full_math_u128::mul_shr(ratio, 37481735321082u128, 64u8);
-        };
-
-        ratio
-    }
-
-    // 计算正tick对应的sqrt价格
-    // 参数：tick - 正tick值
-    // 返回值：对应的sqrt价格
-    fun get_sqrt_price_at_positive_tick(tick: i64::I64): u128 {
-        let abs_tick = i64::as_u64(i64::abs(tick));
-        let ratio =
-            if (abs_tick & 0x1 != 0) {
-                79232123823359799118286999567u128
-            } else {
-                79228162514264337593543950336u128
-            };
-
-        // 通过位运算逐步计算价格比率（正tick）
-        if (abs_tick & 0x2 != 0) {
-            ratio = full_math_u128::mul_shr(
-                ratio, 79236085330515764027303304731u128, 96u8
-            )
-        };
-        if (abs_tick & 0x4 != 0) {
-            ratio = full_math_u128::mul_shr(
-                ratio, 79244008939048815603706035061u128, 96u8
-            )
-        };
-        if (abs_tick & 0x8 != 0) {
-            ratio = full_math_u128::mul_shr(
-                ratio, 79259858533276714757314932305u128, 96u8
-            )
-        };
-        if (abs_tick & 0x10 != 0) {
-            ratio = full_math_u128::mul_shr(
-                ratio, 79291567232598584799939703904u128, 96u8
-            )
-        };
-        if (abs_tick & 0x20 != 0) {
-            ratio = full_math_u128::mul_shr(
-                ratio, 79355022692464371645785046466u128, 96u8
-            )
-        };
-        if (abs_tick & 0x40 != 0) {
-            ratio = full_math_u128::mul_shr(
-                ratio, 79482085999252804386437311141u128, 96u8
-            )
-        };
-        if (abs_tick & 0x80 != 0) {
-            ratio = full_math_u128::mul_shr(
-                ratio, 79736823300114093921829183326u128, 96u8
-            )
-        };
-        if (abs_tick & 0x100 != 0) {
-            ratio = full_math_u128::mul_shr(
-                ratio, 80248749790819932309965073892u128, 96u8
-            )
-        };
-        if (abs_tick & 0x200 != 0) {
-            ratio = full_math_u128::mul_shr(
-                ratio, 81282483887344747381513967011u128, 96u8
-            )
-        };
-        if (abs_tick & 0x400 != 0) {
-            ratio = full_math_u128::mul_shr(
-                ratio, 83390072131320151908154831281u128, 96u8
-            )
-        };
-        if (abs_tick & 0x800 != 0) {
-            ratio = full_math_u128::mul_shr(
-                ratio, 87770609709833776024991924138u128, 96u8
-            )
-        };
-        if (abs_tick & 0x1000 != 0) {
-            ratio = full_math_u128::mul_shr(
-                ratio, 97234110755111693312479820773u128, 96u8
-            )
-        };
-        if (abs_tick & 0x2000 != 0) {
-            ratio = full_math_u128::mul_shr(
-                ratio, 119332217159966728226237229890u128, 96u8
-            )
-        };
-        if (abs_tick & 0x4000 != 0) {
-            ratio = full_math_u128::mul_shr(
-                ratio, 179736315981702064433883588727u128, 96u8
-            )
-        };
-        if (abs_tick & 0x8000 != 0) {
-            ratio = full_math_u128::mul_shr(
-                ratio, 407748233172238350107850275304u128, 96u8
-            )
-        };
-        if (abs_tick & 0x10000 != 0) {
-            ratio = full_math_u128::mul_shr(
-                ratio, 2098478828474011932436660412517u128, 96u8
-            )
-        };
-        if (abs_tick & 0x20000 != 0) {
-            ratio = full_math_u128::mul_shr(
-                ratio, 55581415166113811149459800483533u128, 96u8
-            )
-        };
-        if (abs_tick & 0x40000 != 0) {
-            ratio = full_math_u128::mul_shr(
-                ratio, 38992368544603139932233054999993551u128, 96u8
-            )
-        };
-
-        ratio >> 32
     }
 
     // 测试函数 - 测试根据tick获取sqrt价格
@@ -410,7 +323,7 @@ module eden_clmm::tick_math {
                 };
             };
             //assert!(i64::eq(t, tick) == true, 0);
-            t = i64::add(t, i64::from(10001));
+            t = i64::add(t, i64::from(10000));
         }
     }
 
